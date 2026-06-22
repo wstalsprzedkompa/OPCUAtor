@@ -1,6 +1,6 @@
 # OPCUAtor
 
-Maly serwis REST dzialajacy jak bezglowy klient OPC UA. Domyslnie startuje na porcie `9500` i potrafi pobrac drzewo obiektow z serwera OPC UA, np. z aplikacji ladowarki ABB, a nastepnie oddac je jako JSON.
+Maly serwis REST dzialajacy jak bezglowy klient OPC UA. Domyslnie startuje na porcie `9500` i potrafi pobrac drzewo obiektow z dowolnego serwera OPC UA, a nastepnie oddac je jako JSON.
 
 ## Instalacja
 
@@ -19,7 +19,7 @@ python -m pip install -r requirements.txt
 Skopiuj `.env.example` do `.env` i ustaw przynajmniej:
 
 ```ini
-OPCUA_ENDPOINT=opc.tcp://adres-ladowarki:4840
+OPCUA_ENDPOINT=opc.tcp://adres-serwera:4840
 ```
 
 Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do tych z UaExpert. Najprostszy wariant to ustawienie:
