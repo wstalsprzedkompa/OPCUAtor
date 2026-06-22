@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from typing import Any
+from urllib.parse import urlparse
 
 from asyncua import Client, ua
 
@@ -76,11 +77,7 @@ async def _connected_client(endpoint: str):
 
 
 async def browse_namespace(request: BrowseRequest) -> BrowseResponse:
-    endpoint = request.endpoint or settings.opcua_endpoint
-    if not endpoint:
-        raise OpcUaBrowseError(
-            "Missing OPC UA endpoint. Pass endpoint in the request or set OPCUA_ENDPOINT.",
-        )
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
 
     max_depth = request.max_depth if request.max_depth is not None else settings.opcua_max_depth
     max_nodes = request.max_nodes if request.max_nodes is not None else settings.opcua_max_nodes
@@ -107,6 +104,53 @@ async def browse_namespace(request: BrowseRequest) -> BrowseResponse:
         namespace_array=namespace_array,
         tree=tree,
     )
+
+
+async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, Any]]:
+    normalized_endpoint = _normalize_endpoint(endpoint or settings.opcua_endpoint)
+    client = Client(url=normalized_endpoint, timeout=settings.opcua_request_timeout)
+    endpoints = await client.connect_and_get_server_endpoints()
+    return [_endpoint_to_json(item) for item in endpoints]
+
+
+def _normalize_endpoint(endpoint: str | None) -> str:
+    value = (endpoint or "").strip()
+    if not value:
+        raise OpcUaBrowseError(
+            "Missing OPC UA endpoint. Pass endpoint in the request or set OPCUA_ENDPOINT.",
+        )
+
+    parsed = urlparse(value)
+    if parsed.scheme != "opc.tcp":
+        raise OpcUaBrowseError(
+            f"Invalid OPC UA endpoint '{value}'. Expected format: opc.tcp://HOST:PORT",
+        )
+    if not parsed.hostname or parsed.port is None:
+        raise OpcUaBrowseError(
+            f"Invalid OPC UA endpoint '{value}'. Host and port are required, for example: opc.tcp://192.168.1.50:4840",
+        )
+
+    return value
+
+
+def _endpoint_to_json(endpoint) -> dict[str, Any]:
+    return {
+        "endpoint_url": endpoint.EndpointUrl,
+        "security_mode": endpoint.SecurityMode.name,
+        "security_policy_uri": endpoint.SecurityPolicyUri,
+        "security_level": endpoint.SecurityLevel,
+        "server_application_uri": endpoint.Server.ApplicationUri,
+        "server_product_uri": endpoint.Server.ProductUri,
+        "server_application_name": _safe_text(endpoint.Server.ApplicationName),
+        "user_identity_tokens": [
+            {
+                "policy_id": token.PolicyId,
+                "token_type": token.TokenType.name,
+                "security_policy_uri": token.SecurityPolicyUri,
+            }
+            for token in endpoint.UserIdentityTokens
+        ],
+    }
 
 
 async def _read_namespace_array(client: Client) -> list[str]:

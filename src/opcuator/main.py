@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 
 from .config import settings
 from .models import BrowseRequest, BrowseResponse
-from .opcua_browser import OpcUaBrowseError, browse_namespace
+from .opcua_browser import OpcUaBrowseError, browse_namespace, get_server_endpoints
 
 app = FastAPI(
     title="OPCUAtor",
@@ -32,6 +32,19 @@ async def config() -> dict[str, str | int | float | bool | None]:
         "opcua_max_nodes": settings.opcua_max_nodes,
         "opcua_request_timeout": settings.opcua_request_timeout,
     }
+
+
+@app.get("/endpoints")
+async def endpoints(endpoint: str | None = None) -> dict[str, str | list[dict]]:
+    try:
+        return {
+            "endpoint": endpoint or settings.opcua_endpoint or "",
+            "endpoints": await get_server_endpoints(endpoint),
+        }
+    except OpcUaBrowseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"OPC UA endpoint discovery failed: {exc}") from exc
 
 
 @app.post("/browse", response_model=BrowseResponse)

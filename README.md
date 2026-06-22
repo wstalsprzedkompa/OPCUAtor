@@ -25,7 +25,7 @@ OPCUA_ENDPOINT=opc.tcp://adres-serwera:4840
 Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do tych z UaExpert. Najprostszy wariant to ustawienie:
 
 ```ini
-OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/client_cert.pem,certs/client_key.pem,certs/server_cert.pem
+OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/opcuator-client.pem,certs/opcuator-client-key.pem
 ```
 
 Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osobno. Serwer OPC UA musi zaufac certyfikatowi klienta, tak samo jak przy UaExpert.
@@ -82,6 +82,7 @@ Serwis bedzie dostepny pod:
 
 - `GET http://localhost:9500/health`
 - `GET http://localhost:9500/config`
+- `GET http://localhost:9500/endpoints`
 - `GET http://localhost:9500/namespace`
 - `POST http://localhost:9500/browse`
 
@@ -91,6 +92,12 @@ Pobranie standardowego folderu `Objects`:
 
 ```bash
 curl "http://localhost:9500/namespace?max_depth=8&max_nodes=5000" | jq .
+```
+
+Sprawdzenie profili bezpieczenstwa udostepnianych przez serwer:
+
+```bash
+curl "http://localhost:9500/endpoints" | jq .
 ```
 
 Pobranie z endpointem podanym w zapytaniu:
