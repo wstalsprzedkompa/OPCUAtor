@@ -1,8 +1,8 @@
 # OPCUAtor
 
-OPCUAtor to klient OPC UA z API REST. Domyslnie startuje na porcie `9500` i potrafi pobrac drzewo obiektow z dowolnego serwera OPC UA, a nastepnie oddac je jako JSON.
+OPCUAtor is an OPC UA client with a REST API. It listens on port `9500` by default and can expose an OPC UA server address space as JSON.
 
-## Instalacja
+## Installation
 
 Fedora:
 
@@ -14,114 +14,112 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## Konfiguracja
+## Configuration
 
-Skopiuj `.env.example` do `.env` i ustaw przynajmniej:
+Copy `.env.example` to `.env` and set at least:
 
 ```ini
-OPCUA_ENDPOINT=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer
+OPCUA_ENDPOINT=opc.tcp://server-host:4840/OPCUA/Server
 ```
 
-Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do tych z UaExpert. Najprostszy wariant to ustawienie:
+If the server requires certificates, use:
 
 ```ini
 OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/uaexpert.der,certs/uaexpert_key.pem
 ```
 
-Jesli serwer wymaga metody security `None`, ustaw:
+If the server uses security method `None`, set:
 
 ```ini
 OPCUA_SECURITY_STRING=None
 ```
 
-To jest rownowazne pustemu `OPCUA_SECURITY_STRING=`, ale czytelniejsze przy przepisywaniu ustawien z dokumentacji.
+This is equivalent to an empty `OPCUA_SECURITY_STRING=`, but it is clearer when copying settings from documentation.
 
-Niektore serwery embedded zwracaja pusta liste `UserIdentityTokens`, mimo ze przyjmuja sesje Anonymous. OPCUAtor domyslnie probuje obejsc ten przypadek:
+Some embedded servers return an empty `UserIdentityTokens` list even though they accept Anonymous sessions. OPCUAtor can try Anonymous anyway:
 
 ```ini
 OPCUA_ASSUME_ANONYMOUS_IF_NO_TOKENS=true
 ```
 
-Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osobno. Serwer OPC UA musi zaufac certyfikatowi klienta, tak samo jak przy UaExpert.
+## OPC UA Client Certificate
 
-## Certyfikat klienta OPC UA
+### Using a UaExpert Certificate
 
-### Uzycie certyfikatu z UaExpert
+If the server already trusts a UaExpert client certificate, copy these files from the UaExpert profile:
 
-Jesli serwer ma juz zaufac certyfikatowi z UaExpert, skopiuj z profilu UaExpert:
+- `PKI/own/certs/uaexpert.der` to `certs/uaexpert.der`
+- `PKI/own/private/uaexpert_key.pem` to `certs/uaexpert_key.pem`
 
-- `PKI/own/certs/uaexpert.der` do `certs/uaexpert.der`,
-- `PKI/own/private/uaexpert_key.pem` do `certs/uaexpert_key.pem`.
-
-Potem sprawdz certyfikat i odczytaj `Application URI` oraz hash SHA256:
+Inspect the certificate and read its `Application URI` and SHA256 hash:
 
 ```bash
 python scripts/inspect-opcua-cert.py certs/uaexpert.der
 ```
 
-Hash z pola `SHA256 hex` powinien byc ta sama wartoscia, ktora wpisujesz po stronie serwera do whitelisty certyfikatow klienta. W `.env` ustaw:
+The `SHA256 hex` value is the value to put into the server-side client certificate whitelist. In `.env`, set:
 
 ```ini
-OPCUA_ENDPOINT=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer
-OPCUA_APPLICATION_URI=wartosc_z_Application_URI_z_certyfikatu
+OPCUA_ENDPOINT=opc.tcp://server-host:4840/OPCUA/Server
+OPCUA_APPLICATION_URI=application_uri_from_the_certificate
 OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/uaexpert.der,certs/uaexpert_key.pem
 OPCUA_USERNAME=
 OPCUA_PASSWORD=
 ```
 
-Jesli hostname z endpointu nie rozwiazuje sie na Fedorze, dodaj wpis do `/etc/hosts`, np.:
+If the endpoint hostname does not resolve on Fedora, add it to `/etc/hosts`:
 
 ```bash
-sudo sh -c 'echo "10.243.71.16 OR2HPM-EH9-9999-023" >> /etc/hosts'
+sudo sh -c 'echo "192.0.2.10 server-host" >> /etc/hosts'
 ```
 
-### Wygenerowanie certyfikatu w stylu UaExpert
+### Generating a UaExpert-Style Certificate
 
-OPCUAtor moze wygenerowac wlasny certyfikat klienta w takim samym ukladzie plikow jak UaExpert:
+OPCUAtor can generate a client certificate using the same file layout as UaExpert:
 
 ```bash
 source .opcuator-venv/bin/activate
 python scripts/generate-opcua-client-cert.py
 ```
 
-Powstana pliki:
+Generated files:
 
-- `certs/uaexpert_key.pem` - prywatny klucz klienta, zostaje lokalnie,
-- `certs/uaexpert.der` - publiczny certyfikat klienta w formacie DER dla OPCUAtor i do zaufania po stronie serwera.
+- `certs/uaexpert_key.pem` - private client key, keep it local
+- `certs/uaexpert.der` - public DER client certificate for OPCUAtor and the server trust/whitelist setup
 
-Do `.env` wpisz:
+In `.env`, set:
 
 ```ini
 OPCUA_APPLICATION_NAME=OPCUAtor
-OPCUA_APPLICATION_URI=wartosc_Application_URI_wypisana_przez_generator
+OPCUA_APPLICATION_URI=application_uri_printed_by_the_generator
 OPCUA_PRODUCT_URI=urn:opcuator:client
 OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/uaexpert.der,certs/uaexpert_key.pem
 ```
 
-Wartosc `OPCUA_APPLICATION_URI` powinna byc taka sama jak `Application URI` wypisane przez generator.
+`OPCUA_APPLICATION_URI` must match the `Application URI` printed by the generator.
 
-Publiczny certyfikat DER skopiuj do katalogu zaufanych certyfikatow klientow na serwerze OPC UA:
+Copy the public DER certificate to the OPC UA server trust directory if the server requires a trusted certificate file:
 
 ```bash
-scp certs/uaexpert.der USER@HOST:/home/bmterra/lithos/security/opcua/trusted/
+scp certs/uaexpert.der USER@HOST:/path/to/opcua/trusted/
 ```
 
-Jesli katalog wymaga uprawnien administracyjnych, skopiuj najpierw do `/tmp`, a potem przenies na serwerze:
+If the directory requires administrative permissions, copy to `/tmp` first and move it on the server:
 
 ```bash
 scp certs/uaexpert.der USER@HOST:/tmp/
-ssh USER@HOST 'sudo cp /tmp/uaexpert.der /home/bmterra/lithos/security/opcua/trusted/'
+ssh USER@HOST 'sudo cp /tmp/uaexpert.der /path/to/opcua/trusted/'
 ```
 
-Klucz prywatny `certs/uaexpert_key.pem` nie powinien byc kopiowany na serwer ani commitowany do repozytorium.
+Do not copy the private key `certs/uaexpert_key.pem` to the server, and do not commit it to the repository.
 
-Jesli potrzebna jest dodatkowa kopia certyfikatu w PEM, uzyj:
+If you also need a PEM copy of the certificate, run:
 
 ```bash
 python scripts/generate-opcua-client-cert.py --write-pem-cert
 ```
 
-## Uruchomienie
+## Running
 
 Linux / Fedora:
 
@@ -130,9 +128,9 @@ chmod +x opcuator.sh
 ./opcuator.sh
 ```
 
-Po starcie OPCUAtor wypisze swoja nazwe, port REST oraz kilka gotowych adresow URL, od ktorych mozna zaczac testy.
+On startup, OPCUAtor prints its name, REST port, and a few ready-to-use URLs.
 
-Serwis bedzie dostepny pod:
+Available REST endpoints:
 
 - `GET http://localhost:9500/health`
 - `GET http://localhost:9500/config`
@@ -140,62 +138,62 @@ Serwis bedzie dostepny pod:
 - `GET http://localhost:9500/namespace`
 - `POST http://localhost:9500/browse`
 
-## Przyklady
+## Examples
 
-Pobranie standardowego folderu `Objects`:
+Browse the standard `Objects` folder:
 
 ```bash
 curl "http://localhost:9500/namespace?max_depth=8&max_nodes=5000" | jq .
 ```
 
-Sprawdzenie profili bezpieczenstwa udostepnianych przez serwer:
+Check security profiles exposed by the OPC UA server:
 
 ```bash
 curl "http://localhost:9500/endpoints" | jq .
 ```
 
-Jesli `/endpoints` pokazuje `server_application_uri`, a polaczenie albo browse nadal jest odrzucane, mozna skopiowac te wartosc do `.env`:
+If `/endpoints` returns `server_application_uri` and connection or browsing is rejected, copy that value to `.env`:
 
 ```ini
-OPCUA_SERVER_URI=wartosc_z_pola_server_application_uri
+OPCUA_SERVER_URI=value_from_server_application_uri
 ```
 
-Nie nalezy mylic tego z `OPCUA_APPLICATION_URI`: `OPCUA_APPLICATION_URI`, `OPCUA_APPLICATION_NAME` i `OPCUA_PRODUCT_URI` opisuja klienta OPCUAtor, a `OPCUA_SERVER_URI` opisuje aplikacje serwera.
+Do not confuse this with `OPCUA_APPLICATION_URI`: `OPCUA_APPLICATION_URI`, `OPCUA_APPLICATION_NAME`, and `OPCUA_PRODUCT_URI` describe the OPCUAtor client. `OPCUA_SERVER_URI` describes the server application.
 
-Jesli serwer jest wrazliwy na duze zapytania browse, mozna zmniejszyc liczbe referencji pobieranych naraz:
+If the server is sensitive to large browse requests, reduce the number of references requested at once:
 
 ```ini
 OPCUA_BROWSE_REFERENCES_PER_NODE=100
 ```
 
-Pobranie z endpointem podanym w zapytaniu:
+Browse with an endpoint passed in the request:
 
 ```bash
-curl "http://localhost:9500/namespace?endpoint=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer&max_depth=6" | jq .
+curl "http://localhost:9500/namespace?endpoint=opc.tcp://server-host:4840/OPCUA/Server&max_depth=6" | jq .
 ```
 
-Wariant `POST`, wygodny do testow:
+POST variant:
 
 ```bash
 curl -X POST "http://localhost:9500/browse" \
   -H "Content-Type: application/json" \
-  -d '{"endpoint":"opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
+  -d '{"endpoint":"opc.tcp://server-host:4840/OPCUA/Server","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
   | jq .
 ```
 
-## Co jest w JSON
+## JSON Response
 
-Odpowiedz zawiera:
+The browse response contains:
 
-- `namespace_array`: indeksy namespace z serwera OPC UA,
-- `tree`: drzewo obiektow od wskazanego `root_node`,
-- dla kazdego wezla: `node_id`, `browse_name`, `display_name`, `description`, `node_class`, `children`,
-- opcjonalnie aktualne wartosci zmiennych, gdy ustawisz `include_values=true`,
-- widoczne metody OPC UA, gdy serwer pokazuje je jako wezly klasy `Method`.
+- `namespace_array`: namespace indexes returned by the OPC UA server
+- `tree`: the object tree starting at `root_node`
+- per node: `node_id`, `browse_name`, `display_name`, `description`, `node_class`, `children`
+- optional variable values when `include_values=true`
+- visible OPC UA methods when the server exposes nodes with class `Method`
 
-## Opcjonalnie: usluga systemd
+## Optional systemd Service
 
-Przyklad pliku `/etc/systemd/system/opcuator.service`:
+Example `/etc/systemd/system/opcuator.service`:
 
 ```ini
 [Unit]
@@ -214,7 +212,7 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Po skopiowaniu projektu do `/opt/opcuator`:
+After copying the project to `/opt/opcuator`:
 
 ```bash
 sudo systemctl daemon-reload
@@ -222,28 +220,28 @@ sudo systemctl enable --now opcuator
 sudo systemctl status opcuator
 ```
 
-## Opcjonalnie: synchronizacja z GitHub
+## Optional GitHub Sync
 
-Najprostsza konfiguracja na Fedorze:
+Initial setup on Fedora:
 
 ```bash
 chmod +x scripts/setup-github-sync.sh scripts/opcuator-github-sync.sh
 scripts/setup-github-sync.sh
 ```
 
-Domyslnie skrypt uzywa repozytorium:
+The script uses this repository by default:
 
 ```text
 git@github.com:wstalsprzedkompa/OPCUAtor.git
 ```
 
-Mozna tez jawnie podac adres HTTPS:
+You can also pass the HTTPS URL explicitly:
 
 ```bash
 scripts/setup-github-sync.sh https://github.com/wstalsprzedkompa/OPCUAtor.git main
 ```
 
-Do automatycznej synchronizacji co 5 minut:
+Automatic sync every 5 minutes:
 
 ```bash
 sudo mkdir -p /etc/opcuator
@@ -255,9 +253,9 @@ sudo systemctl enable --now opcuator-github-sync.timer
 sudo systemctl list-timers opcuator-github-sync.timer
 ```
 
-Skrypt synchronizacji robi `pull --rebase --autostash`, dodaje zmiany z katalogu projektu, tworzy commit, jesli cos sie zmienilo, i wysyla branch `main` do `origin`. Plik `.env` oraz lokalne venv sa ignorowane przez `.gitignore`, wiec sekrety i zaleznosci nie powinny trafic do repozytorium.
+The sync script runs `pull --rebase --autostash`, adds project changes, creates a commit when needed, and pushes branch `main` to `origin`. `.env` and local virtual environments are ignored by `.gitignore`, so secrets and installed dependencies should not be committed.
 
-Do automatycznego pushowania najlepiej skonfigurowac klucz SSH dla konta/uzytkownika, pod ktorym dziala timer:
+For automatic pushes, configure SSH for the account or user running the timer:
 
 ```bash
 ssh -T git@github.com
