@@ -100,8 +100,7 @@ async def endpoints(endpoint: str | None = None) -> dict[str, str | list[dict]]:
         raise HTTPException(status_code=502, detail=f"OPC UA endpoint discovery failed: {exc}") from exc
 
 
-@app.post("/browse", response_model=BrowseResponse)
-async def browse(request: BrowseRequest) -> BrowseResponse:
+async def _browse_response(request: BrowseRequest) -> BrowseResponse:
     try:
         if settings.opcua_persistent_connection and request.endpoint is None:
             client = await connection_manager.get_client()
@@ -115,6 +114,37 @@ async def browse(request: BrowseRequest) -> BrowseResponse:
         raise HTTPException(status_code=502, detail=f"OPC UA browse failed: {exc}") from exc
 
 
+@app.post("/Browse", response_model=BrowseResponse)
+async def browse_post(request: BrowseRequest) -> BrowseResponse:
+    return await _browse_response(request)
+
+
+@app.get("/Browse", response_model=BrowseResponse)
+async def browse_get(
+    endpoint: str | None = None,
+    root_node: str = "i=85",
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+    include_values: bool = False,
+    include_methods: bool = True,
+) -> BrowseResponse:
+    return await _browse_response(
+        BrowseRequest(
+            endpoint=endpoint,
+            root_node=root_node,
+            max_depth=max_depth,
+            max_nodes=max_nodes,
+            include_values=include_values,
+            include_methods=include_methods,
+        ),
+    )
+
+
+@app.post("/browse", response_model=BrowseResponse, include_in_schema=False)
+async def legacy_browse_post(request: BrowseRequest) -> BrowseResponse:
+    return await _browse_response(request)
+
+
 async def _tree_response(request: BrowseRequest) -> TreeResponse:
     if settings.opcua_persistent_connection and request.endpoint is None:
         client = await connection_manager.get_client()
@@ -122,8 +152,8 @@ async def _tree_response(request: BrowseRequest) -> TreeResponse:
     return await browse_tree(request)
 
 
-@app.get("/tree", response_model=TreeResponse)
-async def tree(
+@app.get("/Browse/Tree", response_model=TreeResponse)
+async def browse_tree_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
     max_depth: int | None = None,
@@ -149,15 +179,15 @@ async def tree(
         raise HTTPException(status_code=502, detail=f"OPC UA tree browse failed: {exc}") from exc
 
 
-@app.get("/tree/text")
-async def tree_text(
+@app.get("/Browse/Text")
+async def browse_text_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
     max_depth: int | None = None,
     max_nodes: int | None = None,
     include_methods: bool = True,
 ) -> Response:
-    tree_response = await tree(
+    tree_response = await browse_tree_get(
         endpoint=endpoint,
         root_node=root_node,
         max_depth=max_depth,
@@ -167,8 +197,42 @@ async def tree_text(
     return Response(render_tree_text(tree_response.tree), media_type="text/plain")
 
 
-@app.get("/namespace", response_model=BrowseResponse)
-async def namespace(
+@app.get("/tree", response_model=TreeResponse, include_in_schema=False)
+async def legacy_tree(
+    endpoint: str | None = None,
+    root_node: str = "i=84",
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+    include_methods: bool = True,
+) -> TreeResponse:
+    return await browse_tree_get(
+        endpoint=endpoint,
+        root_node=root_node,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        include_methods=include_methods,
+    )
+
+
+@app.get("/tree/text", include_in_schema=False)
+async def legacy_tree_text(
+    endpoint: str | None = None,
+    root_node: str = "i=84",
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+    include_methods: bool = True,
+) -> Response:
+    return await browse_text_get(
+        endpoint=endpoint,
+        root_node=root_node,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        include_methods=include_methods,
+    )
+
+
+@app.get("/namespace", response_model=BrowseResponse, include_in_schema=False)
+async def legacy_namespace(
     endpoint: str | None = None,
     root_node: str = "i=85",
     max_depth: int | None = None,
@@ -176,13 +240,11 @@ async def namespace(
     include_values: bool = False,
     include_methods: bool = True,
 ) -> BrowseResponse:
-    return await browse(
-        BrowseRequest(
-            endpoint=endpoint,
-            root_node=root_node,
-            max_depth=max_depth,
-            max_nodes=max_nodes,
-            include_values=include_values,
-            include_methods=include_methods,
-        ),
+    return await browse_get(
+        endpoint=endpoint,
+        root_node=root_node,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        include_values=include_values,
+        include_methods=include_methods,
     )

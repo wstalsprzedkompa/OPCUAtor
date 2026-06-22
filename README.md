@@ -183,10 +183,10 @@ Available endpoints:
 - `POST http://localhost:9500/disconnect`
 - `GET http://localhost:9500/config`
 - `GET http://localhost:9500/endpoints`
-- `GET http://localhost:9500/tree`
-- `GET http://localhost:9500/tree/text`
-- `GET http://localhost:9500/namespace`
-- `POST http://localhost:9500/browse`
+- `GET http://localhost:9500/Browse`
+- `POST http://localhost:9500/Browse`
+- `GET http://localhost:9500/Browse/Tree`
+- `GET http://localhost:9500/Browse/Text`
 
 Check server endpoint/security information:
 
@@ -212,19 +212,19 @@ OPCUA_CONNECT_ON_STARTUP=false
 Browse the standard `Objects` folder:
 
 ```bash
-curl "http://localhost:9500/namespace?max_depth=8&max_nodes=5000" | jq .
+curl "http://localhost:9500/Browse?max_depth=8&max_nodes=5000" | jq .
 ```
 
 Display a simplified UaExpert-like text tree from OPC UA `Root`:
 
 ```bash
-curl "http://localhost:9500/tree/text?max_depth=6&max_nodes=500"
+curl "http://localhost:9500/Browse/Text?max_depth=6&max_nodes=500"
 ```
 
 Get the same tree as structured JSON with node metadata:
 
 ```bash
-curl "http://localhost:9500/tree?max_depth=6&max_nodes=500" | jq .
+curl "http://localhost:9500/Browse/Tree?max_depth=6&max_nodes=500" | jq .
 ```
 
 If the server is sensitive to large browse requests, reduce the number of references requested at once in `.env`:
@@ -236,13 +236,13 @@ OPCUA_BROWSE_REFERENCES_PER_NODE=100
 Browse with an endpoint passed in the request:
 
 ```bash
-curl "http://localhost:9500/namespace?endpoint=opc.tcp://server-host:4840/OPCUA/Server&max_depth=6" | jq .
+curl "http://localhost:9500/Browse?endpoint=opc.tcp://server-host:4840/OPCUA/Server&max_depth=6" | jq .
 ```
 
 POST variant:
 
 ```bash
-curl -X POST "http://localhost:9500/browse" \
+curl -X POST "http://localhost:9500/Browse" \
   -H "Content-Type: application/json" \
   -d '{"endpoint":"opc.tcp://server-host:4840/OPCUA/Server","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
   | jq .
