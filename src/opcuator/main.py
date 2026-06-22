@@ -151,7 +151,7 @@ async def _tree_response(request: BrowseRequest) -> TreeResponse:
 async def browse_hierarchy_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
-    max_depth: int | None = None,
+    max_depth: int | None = 4,
     max_nodes: int | None = None,
     include_methods: bool = True,
 ) -> TreeResponse:
@@ -178,7 +178,7 @@ async def browse_hierarchy_get(
 async def browse_tree_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
-    max_depth: int | None = None,
+    max_depth: int | None = 4,
     max_nodes: int | None = None,
     include_methods: bool = True,
 ) -> Response:
