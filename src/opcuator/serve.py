@@ -31,7 +31,7 @@ def _print_startup_banner() -> None:
     host = settings.rest_host
     print()
     print("OPCUAtor")
-    print("REST bridge for OPC UA")
+    print("REST client for OPC UA")
     print()
     print(f"Listening on: {host}:{port}")
     print("Try one of these URLs:")

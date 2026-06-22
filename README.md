@@ -19,7 +19,7 @@ python -m pip install -r requirements.txt
 Skopiuj `.env.example` do `.env` i ustaw przynajmniej:
 
 ```ini
-OPCUA_ENDPOINT=opc.tcp://adres-serwera:4840
+OPCUA_ENDPOINT=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer
 ```
 
 Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do tych z UaExpert. Najprostszy wariant to ustawienie:
@@ -171,7 +171,7 @@ OPCUA_BROWSE_REFERENCES_PER_NODE=100
 Pobranie z endpointem podanym w zapytaniu:
 
 ```bash
-curl "http://localhost:9500/namespace?endpoint=opc.tcp://192.168.1.50:4840&max_depth=6" | jq .
+curl "http://localhost:9500/namespace?endpoint=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer&max_depth=6" | jq .
 ```
 
 Wariant `POST`, wygodny do testow:
@@ -179,7 +179,7 @@ Wariant `POST`, wygodny do testow:
 ```bash
 curl -X POST "http://localhost:9500/browse" \
   -H "Content-Type: application/json" \
-  -d '{"endpoint":"opc.tcp://192.168.1.50:4840","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
+  -d '{"endpoint":"opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
   | jq .
 ```
 

@@ -149,7 +149,7 @@ def _normalize_endpoint(endpoint: str | None) -> str:
         )
     if not parsed.hostname or parsed.port is None:
         raise OpcUaBrowseError(
-            f"Invalid OPC UA endpoint '{value}'. Host and port are required, for example: opc.tcp://192.168.1.50:4840",
+            f"Invalid OPC UA endpoint '{value}'. Host and port are required, for example: opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer",
         )
 
     return value
