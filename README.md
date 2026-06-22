@@ -215,13 +215,13 @@ Browse the standard `Objects` folder:
 curl "http://localhost:9500/namespace?max_depth=8&max_nodes=5000" | jq .
 ```
 
-Display a UaExpert-like tree from OPC UA `Root`:
+Display a simplified UaExpert-like text tree from OPC UA `Root`:
 
 ```bash
 curl "http://localhost:9500/tree/text?max_depth=6&max_nodes=500"
 ```
 
-Get the same tree as compact JSON:
+Get the same tree as structured JSON with node metadata:
 
 ```bash
 curl "http://localhost:9500/tree?max_depth=6&max_nodes=500" | jq .

@@ -150,12 +150,19 @@ async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, An
 
 
 def _compact_tree(node: dict[str, Any]) -> dict[str, Any]:
+    children = [_compact_tree(child) for child in node.get("children", [])]
+    node_class = node.get("node_class")
+    method = node_class == ua.NodeClass.Method.name
+    name = _tree_node_name(node)
     return {
-        "name": _tree_node_name(node),
+        "name": name,
+        "label": f"*{name}" if method else name,
         "node_id": node.get("node_id"),
-        "node_class": node.get("node_class"),
-        "method": node.get("node_class") == ua.NodeClass.Method.name,
-        "children": [_compact_tree(child) for child in node.get("children", [])],
+        "node_class": node_class,
+        "kind": _tree_node_kind(node_class),
+        "method": method,
+        "children_count": len(children),
+        "children": children,
     }
 
 
@@ -171,9 +178,28 @@ def _tree_node_name(node: dict[str, Any]) -> str:
     return node.get("node_id", "<unknown>")
 
 
+def _tree_node_kind(node_class: str | None) -> str:
+    if node_class == ua.NodeClass.Method.name:
+        return "method"
+    if node_class == ua.NodeClass.Object.name:
+        return "object"
+    if node_class == ua.NodeClass.Variable.name:
+        return "variable"
+    if node_class == ua.NodeClass.ObjectType.name:
+        return "object_type"
+    if node_class == ua.NodeClass.VariableType.name:
+        return "variable_type"
+    if node_class == ua.NodeClass.ReferenceType.name:
+        return "reference_type"
+    if node_class == ua.NodeClass.DataType.name:
+        return "data_type"
+    if node_class == ua.NodeClass.View.name:
+        return "view"
+    return "unknown"
+
+
 def _render_tree_node(node: dict[str, Any], lines: list[str], *, depth: int, is_last: bool) -> None:
-    name = node.get("name") or node.get("node_id") or "<unknown>"
-    label = f"*{name}" if node.get("method") else str(name)
+    label = node.get("label") or node.get("name") or node.get("node_id") or "<unknown>"
 
     if depth == 0:
         lines.append(label)

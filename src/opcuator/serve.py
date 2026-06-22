@@ -26,7 +26,7 @@ class Color:
 
 
 def _local_ip_addresses() -> list[str]:
-    addresses: set[str] = {"127.0.0.1"}
+    addresses: set[str] = set()
     hostname = socket.gethostname()
 
     try:
@@ -41,7 +41,11 @@ def _local_ip_addresses() -> list[str]:
     except OSError:
         pass
 
-    return sorted(address for address in addresses if address and not address.startswith("0."))
+    return sorted(
+        address
+        for address in addresses
+        if address and not address.startswith("0.") and not address.startswith("127.")
+    )
 
 
 def _colors_enabled() -> bool:
@@ -66,12 +70,18 @@ def _print_startup_banner() -> None:
     print(f"{_color('Persistent OPC UA connection:', Color.YELLOW)} {settings.opcua_persistent_connection}")
     print(_color("Try one of these URLs:", Color.YELLOW))
 
-    for address in _local_ip_addresses():
+    addresses = _local_ip_addresses()
+    if not addresses:
+        print("  No non-loopback IPv4 address detected.")
+        print("  Bind address is still shown above; use the machine IP reachable from your network.")
+
+    for address in addresses:
         base_url = f"http://{address}:{port}"
         print(_color(f"  {base_url}/health", Color.DIM))
         print(f"  {base_url}/connection")
         print(f"  {base_url}/config")
         print(f"  {base_url}/endpoints")
+        print(f"  {base_url}/tree?max_depth=4&max_nodes=500")
         print(f"  {base_url}/tree/text?max_depth=4&max_nodes=500")
         print(f"  {base_url}/namespace?max_depth=2&max_nodes=100")
 
