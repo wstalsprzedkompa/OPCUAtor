@@ -64,6 +64,7 @@ def _print_startup_banner() -> None:
     print()
     print(_color(LOGO.rstrip(), Color.CYAN))
     print(_color("OPCUAtor", Color.BOLD))
+    print(_color("OPCUAtor by Konrad Żelazny", Color.BOLD))
     print(_color("REST client for OPC UA", Color.GREEN))
     print()
     print(f"{_color('Listening on:', Color.YELLOW)} {host}:{port}")
