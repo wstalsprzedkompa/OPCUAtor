@@ -5,6 +5,7 @@
 .venv/
 .opcuator-venv/
 certs/
+tmp-cert-test/
 __pycache__/
 *.py[cod]
 .pytest_cache/

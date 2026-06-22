@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import ipaddress
 import socket
 from datetime import datetime, timedelta, timezone
@@ -19,11 +20,30 @@ def build_parser() -> argparse.ArgumentParser:
         description="Generate an OPC UA client certificate for OPCUAtor.",
     )
     parser.add_argument("--out-dir", default="certs", help="Output directory.")
-    parser.add_argument("--name", default="opcuator-client", help="Output file prefix.")
-    parser.add_argument("--common-name", default="OPCUAtor", help="Certificate common name.")
+    parser.add_argument(
+        "--cert-name",
+        default="uaexpert.der",
+        help="DER certificate filename compatible with UaExpert-style setup.",
+    )
+    parser.add_argument(
+        "--key-name",
+        default="uaexpert_key.pem",
+        help="Private key filename compatible with UaExpert-style setup.",
+    )
+    parser.add_argument(
+        "--pem-cert-name",
+        default="uaexpert.pem",
+        help="Optional PEM certificate filename used only with --write-pem-cert.",
+    )
+    parser.add_argument(
+        "--write-pem-cert",
+        action="store_true",
+        help="Also write a PEM copy of the certificate.",
+    )
+    parser.add_argument("--common-name", default="UaExpert", help="Certificate common name.")
     parser.add_argument(
         "--app-uri",
-        default=f"urn:{hostname}:OPCUAtor",
+        default=f"urn:{hostname}:UnifiedAutomation:UaExpert",
         help="OPC UA application URI stored as a URI subjectAltName.",
     )
     parser.add_argument(
@@ -48,9 +68,9 @@ def main() -> None:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    key_path = out_dir / f"{args.name}-key.pem"
-    cert_pem_path = out_dir / f"{args.name}.pem"
-    cert_der_path = out_dir / f"{args.name}.der"
+    key_path = out_dir / args.key_name
+    cert_der_path = out_dir / args.cert_name
+    cert_pem_path = out_dir / args.pem_cert_name
 
     private_key = rsa.generate_private_key(
         public_exponent=65537,
@@ -60,7 +80,7 @@ def main() -> None:
     subject = issuer = x509.Name(
         [
             x509.NameAttribute(NameOID.COMMON_NAME, args.common_name),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "OPCUAtor"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "UnifiedAutomation"),
         ],
     )
 
@@ -109,17 +129,27 @@ def main() -> None:
             encryption_algorithm=serialization.NoEncryption(),
         ),
     )
-    cert_pem_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
-    cert_der_path.write_bytes(certificate.public_bytes(serialization.Encoding.DER))
+    cert_der_bytes = certificate.public_bytes(serialization.Encoding.DER)
+    cert_der_path.write_bytes(cert_der_bytes)
+    if args.write_pem_cert:
+        cert_pem_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
 
     key_path.chmod(0o600)
 
     print(f"Private key: {key_path}")
-    print(f"Client certificate PEM: {cert_pem_path}")
-    print(f"Client certificate DER for server trust store: {cert_der_path}")
+    print(f"Client certificate DER: {cert_der_path}")
+    if args.write_pem_cert:
+        print(f"Client certificate PEM: {cert_pem_path}")
+    print(f"SHA256 hex: {hashlib.sha256(cert_der_bytes).hexdigest()}")
     print(f"Application URI: {args.app_uri}")
     print()
-    print("Copy this public DER certificate to the OPC UA server trusted directory:")
+    print("Use these files in OPCUAtor:")
+    print(
+        "  OPCUA_SECURITY_STRING="
+        f"Basic256Sha256,SignAndEncrypt,{cert_der_path},{key_path}",
+    )
+    print()
+    print("Copy/hash this public DER certificate for the OPC UA server trust setup:")
     print(f"  {cert_der_path}")
 
 
