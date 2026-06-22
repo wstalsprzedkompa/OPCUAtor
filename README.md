@@ -1,6 +1,6 @@
 # OPCUAtor
 
-Maly serwis REST dzialajacy jak bezglowy klient OPC UA. Domyslnie startuje na porcie `9500` i potrafi pobrac drzewo obiektow z dowolnego serwera OPC UA, a nastepnie oddac je jako JSON.
+OPCUAtor to klient OPC UA z API REST. Domyslnie startuje na porcie `9500` i potrafi pobrac drzewo obiektow z dowolnego serwera OPC UA, a nastepnie oddac je jako JSON.
 
 ## Instalacja
 
@@ -25,7 +25,7 @@ OPCUA_ENDPOINT=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer
 Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do tych z UaExpert. Najprostszy wariant to ustawienie:
 
 ```ini
-OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/opcuator-client.pem,certs/opcuator-client-key.pem
+OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/uaexpert.der,certs/uaexpert_key.pem
 ```
 
 Jesli serwer wymaga metody security `None`, ustaw:

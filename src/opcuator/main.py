@@ -7,7 +7,7 @@ from .opcua_browser import OpcUaBrowseError, browse_namespace, get_server_endpoi
 app = FastAPI(
     title="OPCUAtor",
     version="0.1.0",
-    description="Headless OPC UA REST client.",
+    description="OPC UA client with a REST API.",
 )
 
 
