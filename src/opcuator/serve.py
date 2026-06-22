@@ -82,7 +82,7 @@ def _print_startup_banner() -> None:
         print(f'  curl "{base_url}/config" | jq .')
         print(f'  curl "{base_url}/endpoints" | jq .')
         print(f'  curl "{base_url}/Browse" | jq .')
-        print(f'  curl "{base_url}/Browse/Simple" | jq .')
+        print(f'  curl "{base_url}/Browse/Hierarchy" | jq .')
         print(f'  curl "{base_url}/Browse/Tree?max_depth=5"')
 
     print()
