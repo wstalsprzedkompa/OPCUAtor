@@ -48,7 +48,9 @@ Powstana pliki:
 Do `.env` wpisz:
 
 ```ini
+OPCUA_APPLICATION_NAME=OPCUAtor
 OPCUA_APPLICATION_URI=urn:twoj-host:OPCUAtor
+OPCUA_PRODUCT_URI=urn:opcuator:client
 OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/opcuator-client.pem,certs/opcuator-client-key.pem
 ```
 
@@ -106,7 +108,7 @@ Jesli `/endpoints` pokazuje `server_application_uri`, a polaczenie albo browse n
 OPCUA_SERVER_URI=wartosc_z_pola_server_application_uri
 ```
 
-Nie nalezy mylic tego z `OPCUA_APPLICATION_URI`: `OPCUA_APPLICATION_URI` opisuje klienta OPCUAtor i powinno zgadzac sie z certyfikatem klienta, a `OPCUA_SERVER_URI` opisuje aplikacje serwera.
+Nie nalezy mylic tego z `OPCUA_APPLICATION_URI`: `OPCUA_APPLICATION_URI`, `OPCUA_APPLICATION_NAME` i `OPCUA_PRODUCT_URI` opisuja klienta OPCUAtor, a `OPCUA_SERVER_URI` opisuje aplikacje serwera.
 
 Jesli serwer jest wrazliwy na duze zapytania browse, mozna zmniejszyc liczbe referencji pobieranych naraz:
 

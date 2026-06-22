@@ -66,6 +66,9 @@ def _variant_to_json(value: Any) -> Any:
 async def _connected_client(endpoint: str):
     client = Client(url=endpoint, timeout=settings.opcua_request_timeout)
 
+    client.name = settings.opcua_application_name
+    client.description = settings.opcua_application_name
+    client.product_uri = settings.opcua_product_uri
     if settings.opcua_application_uri:
         client.application_uri = settings.opcua_application_uri
     if settings.opcua_server_uri:
@@ -117,6 +120,13 @@ async def browse_namespace(request: BrowseRequest) -> BrowseResponse:
 async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, Any]]:
     normalized_endpoint = _normalize_endpoint(endpoint or settings.opcua_endpoint)
     client = Client(url=normalized_endpoint, timeout=settings.opcua_request_timeout)
+    client.name = settings.opcua_application_name
+    client.description = settings.opcua_application_name
+    client.product_uri = settings.opcua_product_uri
+    if settings.opcua_application_uri:
+        client.application_uri = settings.opcua_application_uri
+    if settings.opcua_server_uri:
+        client.server_uri = settings.opcua_server_uri
     endpoints = await client.connect_and_get_server_endpoints()
     return [_endpoint_to_json(item) for item in endpoints]
 
