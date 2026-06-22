@@ -4,15 +4,31 @@ from fastapi import FastAPI, HTTPException, Response
 
 from .config import settings
 from .connection import connection_manager
-from .models import BrowseRequest, BrowseResponse, TreeResponse
+from .models import (
+    BrowseRequest,
+    BrowseResponse,
+    CallRequest,
+    CallResponse,
+    ReadRequest,
+    ReadResponse,
+    TreeResponse,
+    WriteRequest,
+    WriteResponse,
+)
 from .opcua_browser import (
     OpcUaBrowseError,
     browse_namespace,
     browse_namespace_with_client,
     browse_tree,
     browse_tree_with_client,
+    call_node_method,
+    call_node_method_with_client,
     get_server_endpoints,
+    read_node_value,
+    read_node_value_with_client,
     render_tree_text,
+    write_node_value,
+    write_node_value_with_client,
 )
 
 
@@ -87,8 +103,13 @@ async def disconnect() -> dict[str, str | bool | None]:
     return (await connection_manager.disconnect()).__dict__
 
 
-@app.get("/endpoints")
+@app.get("/endpoints", include_in_schema=False)
 async def endpoints(endpoint: str | None = None) -> dict[str, str | list[dict]]:
+    return await get_endpoints(endpoint)
+
+
+@app.get("/GetEndpoints")
+async def get_endpoints(endpoint: str | None = None) -> dict[str, str | list[dict]]:
     try:
         return {
             "endpoint": endpoint or settings.opcua_endpoint or "",
@@ -112,6 +133,48 @@ async def _browse_response(request: BrowseRequest) -> BrowseResponse:
         if settings.opcua_persistent_connection and request.endpoint is None:
             await connection_manager.reset_after_error(exc)
         raise HTTPException(status_code=502, detail=f"OPC UA browse failed: {exc}") from exc
+
+
+async def _read_response(request: ReadRequest) -> ReadResponse:
+    try:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            client = await connection_manager.get_client()
+            return await read_node_value_with_client(client, request)
+        return await read_node_value(request)
+    except OpcUaBrowseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            await connection_manager.reset_after_error(exc)
+        raise HTTPException(status_code=502, detail=f"OPC UA read failed: {exc}") from exc
+
+
+async def _write_response(request: WriteRequest) -> WriteResponse:
+    try:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            client = await connection_manager.get_client()
+            return await write_node_value_with_client(client, request)
+        return await write_node_value(request)
+    except OpcUaBrowseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            await connection_manager.reset_after_error(exc)
+        raise HTTPException(status_code=502, detail=f"OPC UA write failed: {exc}") from exc
+
+
+async def _call_response(request: CallRequest) -> CallResponse:
+    try:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            client = await connection_manager.get_client()
+            return await call_node_method_with_client(client, request)
+        return await call_node_method(request)
+    except OpcUaBrowseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        if settings.opcua_persistent_connection and request.endpoint is None:
+            await connection_manager.reset_after_error(exc)
+        raise HTTPException(status_code=502, detail=f"OPC UA call failed: {exc}") from exc
 
 
 @app.post("/Browse", response_model=BrowseResponse)
@@ -138,6 +201,26 @@ async def browse_get(
             include_methods=include_methods,
         ),
     )
+
+
+@app.post("/Read", response_model=ReadResponse)
+async def read_post(request: ReadRequest) -> ReadResponse:
+    return await _read_response(request)
+
+
+@app.get("/Read", response_model=ReadResponse)
+async def read_get(node_id: str, endpoint: str | None = None) -> ReadResponse:
+    return await _read_response(ReadRequest(endpoint=endpoint, node_id=node_id))
+
+
+@app.post("/Write", response_model=WriteResponse)
+async def write_post(request: WriteRequest) -> WriteResponse:
+    return await _write_response(request)
+
+
+@app.post("/Call", response_model=CallResponse)
+async def call_post(request: CallRequest) -> CallResponse:
+    return await _call_response(request)
 
 
 async def _tree_response(request: BrowseRequest) -> TreeResponse:

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -37,3 +39,59 @@ class TreeResponse(BaseModel):
     node_count: int
     truncated: bool
     tree: dict
+
+
+class ReadRequest(BaseModel):
+    endpoint: str | None = Field(
+        default=None,
+        description="OPC UA endpoint URL. If omitted, OPCUA_ENDPOINT is used.",
+    )
+    node_id: str = Field(description="NodeId to read, for example ns=2;s=Some.Node")
+
+
+class ReadResponse(BaseModel):
+    endpoint: str
+    node_id: str
+    value: Any
+
+
+class WriteRequest(BaseModel):
+    endpoint: str | None = Field(
+        default=None,
+        description="OPC UA endpoint URL. If omitted, OPCUA_ENDPOINT is used.",
+    )
+    node_id: str = Field(description="NodeId to write, for example ns=2;s=Some.Node")
+    value: Any = Field(description="JSON value to write.")
+    variant_type: str | None = Field(
+        default=None,
+        description="Optional OPC UA VariantType name, for example Boolean, Int32, String, Double.",
+    )
+
+
+class WriteResponse(BaseModel):
+    endpoint: str
+    node_id: str
+    written: bool
+    value: Any
+    variant_type: str | None
+
+
+class CallRequest(BaseModel):
+    endpoint: str | None = Field(
+        default=None,
+        description="OPC UA endpoint URL. If omitted, OPCUA_ENDPOINT is used.",
+    )
+    object_node_id: str = Field(description="Object NodeId that owns the method.")
+    method_node_id: str = Field(description="Method NodeId to call.")
+    arguments: list[Any] = Field(default_factory=list)
+    argument_types: list[str | None] | None = Field(
+        default=None,
+        description="Optional OPC UA VariantType names matching arguments.",
+    )
+
+
+class CallResponse(BaseModel):
+    endpoint: str
+    object_node_id: str
+    method_node_id: str
+    result: Any

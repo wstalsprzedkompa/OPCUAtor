@@ -182,16 +182,20 @@ Available endpoints:
 - `POST http://localhost:9500/connect`
 - `POST http://localhost:9500/disconnect`
 - `GET http://localhost:9500/config`
-- `GET http://localhost:9500/endpoints`
+- `GET http://localhost:9500/GetEndpoints`
 - `GET http://localhost:9500/Browse`
 - `POST http://localhost:9500/Browse`
 - `GET http://localhost:9500/Browse/Tree`
 - `GET http://localhost:9500/Browse/Hierarchy`
+- `GET http://localhost:9500/Read`
+- `POST http://localhost:9500/Read`
+- `POST http://localhost:9500/Write`
+- `POST http://localhost:9500/Call`
 
 Check server endpoint/security information:
 
 ```bash
-curl "http://localhost:9500/endpoints" | jq .
+curl "http://localhost:9500/GetEndpoints" | jq .
 ```
 
 Check or control the persistent OPC UA connection:
@@ -247,6 +251,39 @@ POST variant:
 curl -X POST "http://localhost:9500/Browse" \
   -H "Content-Type: application/json" \
   -d '{"endpoint":"opc.tcp://server-host:4840/OPCUA/Server","root_node":"i=85","max_depth":8,"max_nodes":5000}' \
+  | jq .
+```
+
+Read a node value:
+
+```bash
+curl "http://localhost:9500/Read?node_id=i=2258" | jq .
+```
+
+Write a node value:
+
+```bash
+curl -X POST "http://localhost:9500/Write" \
+  -H "Content-Type: application/json" \
+  -d '{"node_id":"ns=2;s=Some.Writable.Node","value":true,"variant_type":"Boolean"}' \
+  | jq .
+```
+
+Call a method:
+
+```bash
+curl -X POST "http://localhost:9500/Call" \
+  -H "Content-Type: application/json" \
+  -d '{"object_node_id":"ns=2;s=Some.Object","method_node_id":"ns=2;s=Some.Object.Start","arguments":[]}' \
+  | jq .
+```
+
+When method arguments need explicit OPC UA types, pass `argument_types` next to `arguments`:
+
+```bash
+curl -X POST "http://localhost:9500/Call" \
+  -H "Content-Type: application/json" \
+  -d '{"object_node_id":"ns=2;s=Some.Object","method_node_id":"ns=2;s=Some.Object.SetMode","arguments":["fast"],"argument_types":["String"]}' \
   | jq .
 ```
 

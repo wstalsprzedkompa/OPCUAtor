@@ -8,7 +8,17 @@ from urllib.parse import urlparse
 from asyncua import Client, Node, ua
 
 from .config import settings
-from .models import BrowseRequest, BrowseResponse, TreeResponse
+from .models import (
+    BrowseRequest,
+    BrowseResponse,
+    CallRequest,
+    CallResponse,
+    ReadRequest,
+    ReadResponse,
+    TreeResponse,
+    WriteRequest,
+    WriteResponse,
+)
 
 
 class OpcUaBrowseError(RuntimeError):
@@ -149,6 +159,76 @@ async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, An
     return [_endpoint_to_json(item) for item in endpoints]
 
 
+async def read_node_value(request: ReadRequest) -> ReadResponse:
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
+    async with _connected_client(endpoint) as client:
+        return await read_node_value_with_client(client, request, endpoint)
+
+
+async def read_node_value_with_client(
+    client: Client,
+    request: ReadRequest,
+    endpoint: str | None = None,
+) -> ReadResponse:
+    response_endpoint = endpoint or get_configured_endpoint()
+    node = client.get_node(request.node_id)
+    value = await node.read_value()
+    return ReadResponse(
+        endpoint=response_endpoint,
+        node_id=request.node_id,
+        value=_variant_to_json(value),
+    )
+
+
+async def write_node_value(request: WriteRequest) -> WriteResponse:
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
+    async with _connected_client(endpoint) as client:
+        return await write_node_value_with_client(client, request, endpoint)
+
+
+async def write_node_value_with_client(
+    client: Client,
+    request: WriteRequest,
+    endpoint: str | None = None,
+) -> WriteResponse:
+    response_endpoint = endpoint or get_configured_endpoint()
+    node = client.get_node(request.node_id)
+    variant_type = _variant_type_from_name(request.variant_type)
+    value = _coerce_variant_value(request.value, variant_type)
+    await node.write_value(value, variant_type)
+    return WriteResponse(
+        endpoint=response_endpoint,
+        node_id=request.node_id,
+        written=True,
+        value=_variant_to_json(value),
+        variant_type=variant_type.name if variant_type is not None else None,
+    )
+
+
+async def call_node_method(request: CallRequest) -> CallResponse:
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
+    async with _connected_client(endpoint) as client:
+        return await call_node_method_with_client(client, request, endpoint)
+
+
+async def call_node_method_with_client(
+    client: Client,
+    request: CallRequest,
+    endpoint: str | None = None,
+) -> CallResponse:
+    response_endpoint = endpoint or get_configured_endpoint()
+    object_node = client.get_node(request.object_node_id)
+    method_node_id = ua.NodeId.from_string(request.method_node_id)
+    arguments = _coerce_arguments(request.arguments, request.argument_types)
+    result = await object_node.call_method(method_node_id, *arguments)
+    return CallResponse(
+        endpoint=response_endpoint,
+        object_node_id=request.object_node_id,
+        method_node_id=request.method_node_id,
+        result=_variant_to_json(result),
+    )
+
+
 def _compact_tree(node: dict[str, Any]) -> dict[str, Any]:
     children = [_compact_tree(child) for child in node.get("children", [])]
     node_class = node.get("node_class")
@@ -259,6 +339,67 @@ def _normalize_security_string(security_string: str | None) -> str | None:
     value = (security_string or "").strip()
     if value.lower() in {"", "none", "none_", "securitypolicy#none"}:
         return None
+    return value
+
+
+def _variant_type_from_name(name: str | None) -> ua.VariantType | None:
+    value = (name or "").strip()
+    if not value:
+        return None
+    try:
+        return ua.VariantType[value]
+    except KeyError as exc:
+        valid_names = ", ".join(item.name for item in ua.VariantType)
+        raise OpcUaBrowseError(f"Unknown variant_type '{value}'. Valid values: {valid_names}") from exc
+
+
+def _coerce_arguments(values: list[Any], type_names: list[str | None] | None) -> list[Any]:
+    if type_names is not None and len(type_names) != len(values):
+        raise OpcUaBrowseError("argument_types length must match arguments length.")
+    coerced = []
+    for index, value in enumerate(values):
+        variant_type = _variant_type_from_name(type_names[index] if type_names is not None else None)
+        coerced_value = _coerce_variant_value(value, variant_type)
+        if variant_type is not None:
+            coerced.append(ua.Variant(coerced_value, variant_type))
+        else:
+            coerced.append(coerced_value)
+    return coerced
+
+
+def _coerce_variant_value(value: Any, variant_type: ua.VariantType | None) -> Any:
+    if variant_type is None:
+        return value
+    if variant_type == ua.VariantType.Boolean:
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in {"true", "1", "yes", "on"}:
+                return True
+            if lowered in {"false", "0", "no", "off"}:
+                return False
+            raise OpcUaBrowseError(f"Cannot convert '{value}' to Boolean.")
+        return bool(value)
+    if variant_type in {
+        ua.VariantType.SByte,
+        ua.VariantType.Byte,
+        ua.VariantType.Int16,
+        ua.VariantType.UInt16,
+        ua.VariantType.Int32,
+        ua.VariantType.UInt32,
+        ua.VariantType.Int64,
+        ua.VariantType.UInt64,
+    }:
+        return int(value)
+    if variant_type in {ua.VariantType.Float, ua.VariantType.Double}:
+        return float(value)
+    if variant_type == ua.VariantType.String:
+        return str(value)
+    if variant_type == ua.VariantType.NodeId:
+        return ua.NodeId.from_string(str(value))
+    if variant_type == ua.VariantType.QualifiedName:
+        if isinstance(value, dict):
+            return ua.QualifiedName(value.get("name", ""), int(value.get("namespace_index", 0)))
+        return ua.QualifiedName.from_string(str(value))
     return value
 
 

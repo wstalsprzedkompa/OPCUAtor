@@ -80,10 +80,11 @@ def _print_startup_banner() -> None:
         print(_color(f'  curl "{base_url}/health" | jq .', Color.DIM))
         print(f'  curl "{base_url}/connection" | jq .')
         print(f'  curl "{base_url}/config" | jq .')
-        print(f'  curl "{base_url}/endpoints" | jq .')
+        print(f'  curl "{base_url}/GetEndpoints" | jq .')
         print(f'  curl "{base_url}/Browse" | jq .')
         print(f'  curl "{base_url}/Browse/Hierarchy" | jq .')
         print(f'  curl "{base_url}/Browse/Tree?max_depth=4"')
+        print(f'  curl "{base_url}/Read?node_id=i=2258" | jq .')
 
     print()
 
