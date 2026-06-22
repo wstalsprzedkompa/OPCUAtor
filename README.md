@@ -28,6 +28,14 @@ Jesli serwer wymaga certyfikatow, mozna uzyc certyfikatow klienta podobnych do t
 OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/opcuator-client.pem,certs/opcuator-client-key.pem
 ```
 
+Jesli serwer wymaga metody security `None`, ustaw:
+
+```ini
+OPCUA_SECURITY_STRING=None
+```
+
+To jest rownowazne pustemu `OPCUA_SECURITY_STRING=`, ale czytelniejsze przy przepisywaniu ustawien z dokumentacji.
+
 Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osobno. Serwer OPC UA musi zaufac certyfikatowi klienta, tak samo jak przy UaExpert.
 
 ## Certyfikat klienta OPC UA

@@ -77,8 +77,9 @@ async def _connected_client(endpoint: str):
         client.set_user(settings.opcua_username)
     if settings.opcua_password:
         client.set_password(settings.opcua_password)
-    if settings.opcua_security_string:
-        await client.set_security_string(settings.opcua_security_string)
+    security_string = _normalize_security_string(settings.opcua_security_string)
+    if security_string:
+        await client.set_security_string(security_string)
 
     try:
         await client.connect()
@@ -148,6 +149,13 @@ def _normalize_endpoint(endpoint: str | None) -> str:
             f"Invalid OPC UA endpoint '{value}'. Host and port are required, for example: opc.tcp://192.168.1.50:4840",
         )
 
+    return value
+
+
+def _normalize_security_string(security_string: str | None) -> str | None:
+    value = (security_string or "").strip()
+    if value.lower() in {"", "none", "none_", "securitypolicy#none"}:
+        return None
     return value
 
 
