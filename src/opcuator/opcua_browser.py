@@ -68,6 +68,8 @@ async def _connected_client(endpoint: str):
 
     if settings.opcua_application_uri:
         client.application_uri = settings.opcua_application_uri
+    if settings.opcua_server_uri:
+        client.server_uri = settings.opcua_server_uri
     if settings.opcua_username:
         client.set_user(settings.opcua_username)
     if settings.opcua_password:

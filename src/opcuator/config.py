@@ -13,6 +13,10 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="OPCUA_APPLICATION_URI",
     )
+    opcua_server_uri: str | None = Field(
+        default=None,
+        validation_alias="OPCUA_SERVER_URI",
+    )
     opcua_security_string: str | None = Field(
         default=None,
         validation_alias="OPCUA_SECURITY_STRING",

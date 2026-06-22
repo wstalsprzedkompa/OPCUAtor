@@ -100,6 +100,14 @@ Sprawdzenie profili bezpieczenstwa udostepnianych przez serwer:
 curl "http://localhost:9500/endpoints" | jq .
 ```
 
+Jesli `/endpoints` pokazuje `server_application_uri`, a polaczenie albo browse nadal jest odrzucane, mozna skopiowac te wartosc do `.env`:
+
+```ini
+OPCUA_SERVER_URI=wartosc_z_pola_server_application_uri
+```
+
+Nie nalezy mylic tego z `OPCUA_APPLICATION_URI`: `OPCUA_APPLICATION_URI` opisuje klienta OPCUAtor i powinno zgadzac sie z certyfikatem klienta, a `OPCUA_SERVER_URI` opisuje aplikacje serwera.
+
 Jesli serwer jest wrazliwy na duze zapytania browse, mozna zmniejszyc liczbe referencji pobieranych naraz:
 
 ```ini
