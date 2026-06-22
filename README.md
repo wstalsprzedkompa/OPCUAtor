@@ -183,6 +183,8 @@ Available endpoints:
 - `POST http://localhost:9500/disconnect`
 - `GET http://localhost:9500/config`
 - `GET http://localhost:9500/endpoints`
+- `GET http://localhost:9500/tree`
+- `GET http://localhost:9500/tree/text`
 - `GET http://localhost:9500/namespace`
 - `POST http://localhost:9500/browse`
 
@@ -211,6 +213,18 @@ Browse the standard `Objects` folder:
 
 ```bash
 curl "http://localhost:9500/namespace?max_depth=8&max_nodes=5000" | jq .
+```
+
+Display a UaExpert-like tree from OPC UA `Root`:
+
+```bash
+curl "http://localhost:9500/tree/text?max_depth=6&max_nodes=500"
+```
+
+Get the same tree as compact JSON:
+
+```bash
+curl "http://localhost:9500/tree?max_depth=6&max_nodes=500" | jq .
 ```
 
 If the server is sensitive to large browse requests, reduce the number of references requested at once in `.env`:

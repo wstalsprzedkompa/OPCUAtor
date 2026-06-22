@@ -29,3 +29,11 @@ class BrowseResponse(BaseModel):
     truncated: bool
     namespace_array: list[str | None]
     tree: dict
+
+
+class TreeResponse(BaseModel):
+    endpoint: str
+    root_node: str
+    node_count: int
+    truncated: bool
+    tree: dict

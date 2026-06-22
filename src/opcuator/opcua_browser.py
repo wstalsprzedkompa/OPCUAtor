@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from asyncua import Client, Node, ua
 
 from .config import settings
-from .models import BrowseRequest, BrowseResponse
+from .models import BrowseRequest, BrowseResponse, TreeResponse
 
 
 class OpcUaBrowseError(RuntimeError):
@@ -114,12 +114,76 @@ async def browse_namespace_with_client(
     )
 
 
+async def browse_tree(request: BrowseRequest) -> TreeResponse:
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
+    async with _connected_client(endpoint) as client:
+        return await browse_tree_with_client(client, request, endpoint)
+
+
+async def browse_tree_with_client(
+    client: Client,
+    request: BrowseRequest,
+    endpoint: str | None = None,
+) -> TreeResponse:
+    namespace = await browse_namespace_with_client(client, request, endpoint)
+    return TreeResponse(
+        endpoint=namespace.endpoint,
+        root_node=namespace.root_node,
+        node_count=namespace.node_count,
+        truncated=namespace.truncated,
+        tree=_compact_tree(namespace.tree),
+    )
+
+
+def render_tree_text(tree: dict) -> str:
+    lines: list[str] = []
+    _render_tree_node(tree, lines, depth=0, is_last=True)
+    return "\n".join(lines)
+
+
 async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, Any]]:
     normalized_endpoint = _normalize_endpoint(endpoint or settings.opcua_endpoint)
     client = Client(url=normalized_endpoint, timeout=settings.opcua_request_timeout)
     await configure_client(client)
     endpoints = await client.connect_and_get_server_endpoints()
     return [_endpoint_to_json(item) for item in endpoints]
+
+
+def _compact_tree(node: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "name": _tree_node_name(node),
+        "node_id": node.get("node_id"),
+        "node_class": node.get("node_class"),
+        "method": node.get("node_class") == ua.NodeClass.Method.name,
+        "children": [_compact_tree(child) for child in node.get("children", [])],
+    }
+
+
+def _tree_node_name(node: dict[str, Any]) -> str:
+    display_name = node.get("display_name")
+    if display_name:
+        return display_name
+
+    browse_name = node.get("browse_name")
+    if isinstance(browse_name, dict) and browse_name.get("name"):
+        return browse_name["name"]
+
+    return node.get("node_id", "<unknown>")
+
+
+def _render_tree_node(node: dict[str, Any], lines: list[str], *, depth: int, is_last: bool) -> None:
+    name = node.get("name") or node.get("node_id") or "<unknown>"
+    label = f"*{name}" if node.get("method") else str(name)
+
+    if depth == 0:
+        lines.append(label)
+    else:
+        connector = "`--" if is_last else "|--"
+        lines.append(f"{'   ' * (depth - 1)}{connector} {label}")
+
+    children = node.get("children", [])
+    for index, child in enumerate(children):
+        _render_tree_node(child, lines, depth=depth + 1, is_last=index == len(children) - 1)
 
 
 async def configure_client(client: Client) -> None:

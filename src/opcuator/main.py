@@ -1,15 +1,18 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 
 from .config import settings
 from .connection import connection_manager
-from .models import BrowseRequest, BrowseResponse
+from .models import BrowseRequest, BrowseResponse, TreeResponse
 from .opcua_browser import (
     OpcUaBrowseError,
     browse_namespace,
     browse_namespace_with_client,
+    browse_tree,
+    browse_tree_with_client,
     get_server_endpoints,
+    render_tree_text,
 )
 
 
@@ -110,6 +113,58 @@ async def browse(request: BrowseRequest) -> BrowseResponse:
         if settings.opcua_persistent_connection and request.endpoint is None:
             await connection_manager.reset_after_error(exc)
         raise HTTPException(status_code=502, detail=f"OPC UA browse failed: {exc}") from exc
+
+
+async def _tree_response(request: BrowseRequest) -> TreeResponse:
+    if settings.opcua_persistent_connection and request.endpoint is None:
+        client = await connection_manager.get_client()
+        return await browse_tree_with_client(client, request)
+    return await browse_tree(request)
+
+
+@app.get("/tree", response_model=TreeResponse)
+async def tree(
+    endpoint: str | None = None,
+    root_node: str = "i=84",
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+    include_methods: bool = True,
+) -> TreeResponse:
+    try:
+        return await _tree_response(
+            BrowseRequest(
+                endpoint=endpoint,
+                root_node=root_node,
+                max_depth=max_depth,
+                max_nodes=max_nodes,
+                include_values=False,
+                include_methods=include_methods,
+            ),
+        )
+    except OpcUaBrowseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        if settings.opcua_persistent_connection and endpoint is None:
+            await connection_manager.reset_after_error(exc)
+        raise HTTPException(status_code=502, detail=f"OPC UA tree browse failed: {exc}") from exc
+
+
+@app.get("/tree/text")
+async def tree_text(
+    endpoint: str | None = None,
+    root_node: str = "i=84",
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+    include_methods: bool = True,
+) -> Response:
+    tree_response = await tree(
+        endpoint=endpoint,
+        root_node=root_node,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        include_methods=include_methods,
+    )
+    return Response(render_tree_text(tree_response.tree), media_type="text/plain")
 
 
 @app.get("/namespace", response_model=BrowseResponse)

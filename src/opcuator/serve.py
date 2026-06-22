@@ -72,6 +72,7 @@ def _print_startup_banner() -> None:
         print(f"  {base_url}/connection")
         print(f"  {base_url}/config")
         print(f"  {base_url}/endpoints")
+        print(f"  {base_url}/tree/text?max_depth=4&max_nodes=500")
         print(f"  {base_url}/namespace?max_depth=2&max_nodes=100")
 
     print()
