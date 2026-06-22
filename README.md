@@ -17,8 +17,27 @@ cp .env.example .env
 
 Then choose one certificate setup:
 
-- Use an existing UaExpert certificate: see [Using a UaExpert Certificate](#using-a-uaexpert-certificate).
-- Generate a UaExpert-style certificate: see [Generating a UaExpert-Style Certificate](#generating-a-uaexpert-style-certificate).
+- Copy an existing UaExpert certificate:
+
+```bash
+mkdir -p certs
+cp /path/to/UaExpert/PKI/own/certs/uaexpert.der certs/uaexpert.der
+cp /path/to/UaExpert/PKI/own/private/uaexpert_key.pem certs/uaexpert_key.pem
+python scripts/inspect-opcua-cert.py certs/uaexpert.der
+```
+
+- Or generate a UaExpert-style certificate with OPCUAtor:
+
+```bash
+python scripts/generate-opcua-client-cert.py
+```
+
+Both paths produce/use:
+
+- `certs/uaexpert.der`
+- `certs/uaexpert_key.pem`
+
+Use the printed `SHA256 hex` value in the server-side client certificate whitelist, and copy the printed `Application URI` to `.env` as `OPCUA_APPLICATION_URI`.
 
 After editing `.env`, start OPCUAtor:
 
