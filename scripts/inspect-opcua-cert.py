@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from datetime import timezone
 from pathlib import Path
 
 from cryptography import x509
@@ -31,8 +32,8 @@ def main() -> None:
     print(f"Subject: {certificate.subject.rfc4514_string()}")
     print(f"Issuer: {certificate.issuer.rfc4514_string()}")
     print(f"Serial: {certificate.serial_number}")
-    print(f"Valid from: {certificate.not_valid_before_utc.isoformat()}")
-    print(f"Valid until: {certificate.not_valid_after_utc.isoformat()}")
+    print(f"Valid from: {_certificate_time(certificate, 'not_valid_before').isoformat()}")
+    print(f"Valid until: {_certificate_time(certificate, 'not_valid_after').isoformat()}")
 
     try:
         san = certificate.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
@@ -55,6 +56,16 @@ def main() -> None:
     print("IP addresses:")
     for value in ip_addresses:
         print(f"  {value}")
+
+
+def _certificate_time(certificate: x509.Certificate, field: str):
+    utc_field = f"{field}_utc"
+    if hasattr(certificate, utc_field):
+        return getattr(certificate, utc_field)
+    value = getattr(certificate, field)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 if __name__ == "__main__":
