@@ -197,7 +197,7 @@ def _endpoint_to_json(endpoint) -> dict[str, Any]:
     }
 
 
-async def _read_namespace_array(client: Client) -> list[str]:
+async def _read_namespace_array(client: Client) -> list[str | None]:
     try:
         namespace_node = client.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         value = await namespace_node.read_value()

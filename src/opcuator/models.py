@@ -27,5 +27,5 @@ class BrowseResponse(BaseModel):
     root_node: str
     node_count: int
     truncated: bool
-    namespace_array: list[str]
+    namespace_array: list[str | None]
     tree: dict
