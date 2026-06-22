@@ -147,8 +147,8 @@ async def _tree_response(request: BrowseRequest) -> TreeResponse:
     return await browse_tree(request)
 
 
-@app.get("/Browse/Tree", response_model=TreeResponse)
-async def browse_tree_get(
+@app.get("/Browse/Simple", response_model=TreeResponse)
+async def browse_simple_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
     max_depth: int | None = None,
@@ -171,18 +171,18 @@ async def browse_tree_get(
     except Exception as exc:
         if settings.opcua_persistent_connection and endpoint is None:
             await connection_manager.reset_after_error(exc)
-        raise HTTPException(status_code=502, detail=f"OPC UA tree browse failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"OPC UA simple browse failed: {exc}") from exc
 
 
-@app.get("/Browse/Text")
-async def browse_text_get(
+@app.get("/Browse/Tree")
+async def browse_tree_get(
     endpoint: str | None = None,
     root_node: str = "i=84",
     max_depth: int | None = None,
     max_nodes: int | None = None,
     include_methods: bool = True,
 ) -> Response:
-    tree_response = await browse_tree_get(
+    tree_response = await browse_simple_get(
         endpoint=endpoint,
         root_node=root_node,
         max_depth=max_depth,

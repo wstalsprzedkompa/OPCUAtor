@@ -186,7 +186,7 @@ Available endpoints:
 - `GET http://localhost:9500/Browse`
 - `POST http://localhost:9500/Browse`
 - `GET http://localhost:9500/Browse/Tree`
-- `GET http://localhost:9500/Browse/Text`
+- `GET http://localhost:9500/Browse/Simple`
 
 Check server endpoint/security information:
 
@@ -218,13 +218,13 @@ curl "http://localhost:9500/Browse?max_depth=8&max_nodes=5000" | jq .
 Display a simplified UaExpert-like text tree from OPC UA `Root`:
 
 ```bash
-curl "http://localhost:9500/Browse/Text?max_depth=6&max_nodes=500"
+curl "http://localhost:9500/Browse/Tree?max_depth=5"
 ```
 
-Get the same tree as structured JSON with node metadata:
+Get the simplified tree as structured JSON with node metadata:
 
 ```bash
-curl "http://localhost:9500/Browse/Tree?max_depth=6&max_nodes=500" | jq .
+curl "http://localhost:9500/Browse/Simple?max_depth=6&max_nodes=500" | jq .
 ```
 
 If the server is sensitive to large browse requests, reduce the number of references requested at once in `.env`:
