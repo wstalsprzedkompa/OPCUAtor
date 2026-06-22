@@ -63,7 +63,6 @@ def _print_startup_banner() -> None:
     host = settings.rest_host
     print()
     print(_color(LOGO.rstrip(), Color.CYAN))
-    print(_color("OPCUAtor", Color.BOLD))
     print(_color("OPCUAtor by Konrad Żelazny", Color.BOLD))
     print(_color("REST client for OPC UA", Color.GREEN))
     print()
