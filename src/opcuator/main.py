@@ -31,6 +31,7 @@ async def config() -> dict[str, str | int | float | bool | None]:
         "opcua_product_uri": settings.opcua_product_uri,
         "opcua_server_uri": settings.opcua_server_uri,
         "opcua_security_enabled": bool(settings.opcua_security_string),
+        "opcua_assume_anonymous_if_no_tokens": settings.opcua_assume_anonymous_if_no_tokens,
         "opcua_max_depth": settings.opcua_max_depth,
         "opcua_max_nodes": settings.opcua_max_nodes,
         "opcua_browse_references_per_node": settings.opcua_browse_references_per_node,

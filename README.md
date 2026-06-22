@@ -36,6 +36,12 @@ OPCUA_SECURITY_STRING=None
 
 To jest rownowazne pustemu `OPCUA_SECURITY_STRING=`, ale czytelniejsze przy przepisywaniu ustawien z dokumentacji.
 
+Niektore serwery embedded zwracaja pusta liste `UserIdentityTokens`, mimo ze przyjmuja sesje Anonymous. OPCUAtor domyslnie probuje obejsc ten przypadek:
+
+```ini
+OPCUA_ASSUME_ANONYMOUS_IF_NO_TOKENS=true
+```
+
 Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osobno. Serwer OPC UA musi zaufac certyfikatowi klienta, tak samo jak przy UaExpert.
 
 ## Certyfikat klienta OPC UA

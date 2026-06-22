@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import urlparse
@@ -73,6 +74,8 @@ async def _connected_client(endpoint: str):
         client.application_uri = settings.opcua_application_uri
     if settings.opcua_server_uri:
         client.server_uri = settings.opcua_server_uri
+    if settings.opcua_assume_anonymous_if_no_tokens:
+        _allow_missing_anonymous_token_policy(client)
     if settings.opcua_username:
         client.set_user(settings.opcua_username)
     if settings.opcua_password:
@@ -157,6 +160,21 @@ def _normalize_security_string(security_string: str | None) -> str | None:
     if value.lower() in {"", "none", "none_", "securitypolicy#none"}:
         return None
     return value
+
+
+def _allow_missing_anonymous_token_policy(client: Client) -> None:
+    original_server_policy = client.server_policy
+
+    def server_policy_with_anonymous_fallback(self, token_type: ua.UserTokenType) -> ua.UserTokenPolicy:
+        if not self._policy_ids and token_type == ua.UserTokenType.Anonymous:
+            return ua.UserTokenPolicy(
+                PolicyId="",
+                TokenType=ua.UserTokenType.Anonymous,
+                SecurityPolicyUri=self.security_policy.URI,
+            )
+        return original_server_policy(token_type)
+
+    client.server_policy = types.MethodType(server_policy_with_anonymous_fallback, client)
 
 
 def _endpoint_to_json(endpoint) -> dict[str, Any]:

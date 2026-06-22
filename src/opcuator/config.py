@@ -29,6 +29,10 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="OPCUA_SECURITY_STRING",
     )
+    opcua_assume_anonymous_if_no_tokens: bool = Field(
+        default=True,
+        validation_alias="OPCUA_ASSUME_ANONYMOUS_IF_NO_TOKENS",
+    )
 
     opcua_max_depth: int = Field(default=8, validation_alias="OPCUA_MAX_DEPTH")
     opcua_max_nodes: int = Field(default=5000, validation_alias="OPCUA_MAX_NODES")
