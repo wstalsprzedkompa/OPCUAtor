@@ -202,7 +202,7 @@ curl -X POST "http://localhost:9500/connect" | jq .
 curl -X POST "http://localhost:9500/disconnect" | jq .
 ```
 
-By default, OPCUAtor keeps one OPC UA session and reuses it for `/namespace`:
+By default, OPCUAtor keeps one OPC UA session and reuses it for `/Browse`:
 
 ```ini
 OPCUA_PERSISTENT_CONNECTION=true

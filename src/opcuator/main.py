@@ -140,11 +140,6 @@ async def browse_get(
     )
 
 
-@app.post("/browse", response_model=BrowseResponse, include_in_schema=False)
-async def legacy_browse_post(request: BrowseRequest) -> BrowseResponse:
-    return await _browse_response(request)
-
-
 async def _tree_response(request: BrowseRequest) -> TreeResponse:
     if settings.opcua_persistent_connection and request.endpoint is None:
         client = await connection_manager.get_client()
@@ -195,56 +190,3 @@ async def browse_text_get(
         include_methods=include_methods,
     )
     return Response(render_tree_text(tree_response.tree), media_type="text/plain")
-
-
-@app.get("/tree", response_model=TreeResponse, include_in_schema=False)
-async def legacy_tree(
-    endpoint: str | None = None,
-    root_node: str = "i=84",
-    max_depth: int | None = None,
-    max_nodes: int | None = None,
-    include_methods: bool = True,
-) -> TreeResponse:
-    return await browse_tree_get(
-        endpoint=endpoint,
-        root_node=root_node,
-        max_depth=max_depth,
-        max_nodes=max_nodes,
-        include_methods=include_methods,
-    )
-
-
-@app.get("/tree/text", include_in_schema=False)
-async def legacy_tree_text(
-    endpoint: str | None = None,
-    root_node: str = "i=84",
-    max_depth: int | None = None,
-    max_nodes: int | None = None,
-    include_methods: bool = True,
-) -> Response:
-    return await browse_text_get(
-        endpoint=endpoint,
-        root_node=root_node,
-        max_depth=max_depth,
-        max_nodes=max_nodes,
-        include_methods=include_methods,
-    )
-
-
-@app.get("/namespace", response_model=BrowseResponse, include_in_schema=False)
-async def legacy_namespace(
-    endpoint: str | None = None,
-    root_node: str = "i=85",
-    max_depth: int | None = None,
-    max_nodes: int | None = None,
-    include_values: bool = False,
-    include_methods: bool = True,
-) -> BrowseResponse:
-    return await browse_get(
-        endpoint=endpoint,
-        root_node=root_node,
-        max_depth=max_depth,
-        max_nodes=max_nodes,
-        include_values=include_values,
-        include_methods=include_methods,
-    )
