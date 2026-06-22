@@ -30,6 +30,7 @@ async def config() -> dict[str, str | int | float | bool | None]:
         "opcua_security_enabled": bool(settings.opcua_security_string),
         "opcua_max_depth": settings.opcua_max_depth,
         "opcua_max_nodes": settings.opcua_max_nodes,
+        "opcua_browse_references_per_node": settings.opcua_browse_references_per_node,
         "opcua_request_timeout": settings.opcua_request_timeout,
     }
 

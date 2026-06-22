@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import urlparse
 
-from asyncua import Client, ua
+from asyncua import Client, Node, ua
 
 from .config import settings
 from .models import BrowseRequest, BrowseResponse
@@ -42,6 +42,12 @@ def _qualified_name_to_json(value: ua.QualifiedName | None) -> dict[str, Any] | 
         "name": value.Name,
         "namespace_index": value.NamespaceIndex,
     }
+
+
+def _expanded_node_id_to_string(value: ua.ExpandedNodeId | ua.NodeId) -> str:
+    if hasattr(value, "to_nodeid"):
+        return value.to_nodeid().to_string()
+    return value.to_string()
 
 
 def _variant_to_json(value: Any) -> Any:
@@ -195,9 +201,9 @@ async def _browse_node(
         payload["children_truncated_by_depth"] = True
         return payload
 
-    children = await _read_or_empty(node.get_children)
+    children = await _browse_child_references(node)
     browsed_children = []
-    for child in children:
+    for child, reference in children:
         if counter["count"] >= max_nodes:
             counter["truncated"] = True
             break
@@ -210,6 +216,7 @@ async def _browse_node(
             include_values=include_values,
             include_methods=include_methods,
         )
+        _merge_reference_data(child_payload, reference)
         if include_methods or child_payload.get("node_class") != ua.NodeClass.Method.name:
             browsed_children.append(child_payload)
 
@@ -217,6 +224,60 @@ async def _browse_node(
         payload["children"] = browsed_children
 
     return payload
+
+
+async def _browse_child_references(node) -> list[tuple[Any, ua.ReferenceDescription]]:
+    references = await _browse_references(node)
+    return [(Node(node.session, reference.NodeId), reference) for reference in references]
+
+
+async def _browse_references(node) -> list[ua.ReferenceDescription]:
+    desc = ua.BrowseDescription()
+    desc.NodeId = node.nodeid
+    desc.BrowseDirection = ua.BrowseDirection.Forward
+    desc.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HierarchicalReferences)
+    desc.IncludeSubtypes = True
+    desc.NodeClassMask = ua.NodeClass.Unspecified
+    desc.ResultMask = (
+        ua.BrowseResultMask.ReferenceTypeId
+        | ua.BrowseResultMask.IsForward
+        | ua.BrowseResultMask.NodeClass
+        | ua.BrowseResultMask.BrowseName
+        | ua.BrowseResultMask.DisplayName
+        | ua.BrowseResultMask.TypeDefinition
+    )
+
+    params = ua.BrowseParameters()
+    params.View.Timestamp = ua.get_win_epoch()
+    params.NodesToBrowse.append(desc)
+    params.RequestedMaxReferencesPerNode = settings.opcua_browse_references_per_node
+
+    results = await node.session.browse(params)
+    if not results:
+        return []
+
+    result = results[0]
+    references = list(result.References)
+    while result.ContinuationPoint:
+        next_params = ua.BrowseNextParameters()
+        next_params.ContinuationPoints = [result.ContinuationPoint]
+        next_params.ReleaseContinuationPoints = False
+        next_results = await node.session.browse_next(next_params)
+        if not next_results:
+            break
+        result = next_results[0]
+        references.extend(result.References)
+
+    return references
+
+
+def _merge_reference_data(payload: dict[str, Any], reference: ua.ReferenceDescription) -> None:
+    payload["node_id"] = _expanded_node_id_to_string(reference.NodeId)
+    payload["browse_name"] = _qualified_name_to_json(reference.BrowseName)
+    payload["display_name"] = _safe_text(reference.DisplayName)
+    payload["node_class"] = reference.NodeClass.name
+    payload["reference_type_id"] = reference.ReferenceTypeId.to_string()
+    payload["type_definition"] = _expanded_node_id_to_string(reference.TypeDefinition)
 
 
 async def _read_or_none(callable_obj):

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
 
     opcua_max_depth: int = Field(default=8, validation_alias="OPCUA_MAX_DEPTH")
     opcua_max_nodes: int = Field(default=5000, validation_alias="OPCUA_MAX_NODES")
+    opcua_browse_references_per_node: int = Field(
+        default=1000,
+        validation_alias="OPCUA_BROWSE_REFERENCES_PER_NODE",
+    )
     opcua_request_timeout: float = Field(
         default=30.0,
         validation_alias="OPCUA_REQUEST_TIMEOUT",

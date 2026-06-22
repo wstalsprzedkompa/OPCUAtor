@@ -100,6 +100,12 @@ Sprawdzenie profili bezpieczenstwa udostepnianych przez serwer:
 curl "http://localhost:9500/endpoints" | jq .
 ```
 
+Jesli serwer jest wrazliwy na duze zapytania browse, mozna zmniejszyc liczbe referencji pobieranych naraz:
+
+```ini
+OPCUA_BROWSE_REFERENCES_PER_NODE=100
+```
+
 Pobranie z endpointem podanym w zapytaniu:
 
 ```bash
