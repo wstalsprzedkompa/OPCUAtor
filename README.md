@@ -46,6 +46,37 @@ Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osob
 
 ## Certyfikat klienta OPC UA
 
+### Uzycie certyfikatu z UaExpert
+
+Jesli serwer ma juz zaufac certyfikatowi z UaExpert, skopiuj z profilu UaExpert:
+
+- `PKI/own/certs/uaexpert.der` do `certs/uaexpert.der`,
+- `PKI/own/private/uaexpert_key.pem` do `certs/uaexpert_key.pem`.
+
+Potem sprawdz certyfikat i odczytaj `Application URI` oraz hash SHA256:
+
+```bash
+python scripts/inspect-opcua-cert.py certs/uaexpert.der
+```
+
+Hash z pola `SHA256 hex` powinien byc ta sama wartoscia, ktora wpisujesz po stronie serwera do whitelisty certyfikatow klienta. W `.env` ustaw:
+
+```ini
+OPCUA_ENDPOINT=opc.tcp://OR2HPM-EH9-9999-023:4840/OPCUA/LithosServer
+OPCUA_APPLICATION_URI=wartosc_z_Application_URI_z_certyfikatu
+OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/uaexpert.der,certs/uaexpert_key.pem
+OPCUA_USERNAME=
+OPCUA_PASSWORD=
+```
+
+Jesli hostname z endpointu nie rozwiazuje sie na Fedorze, dodaj wpis do `/etc/hosts`, np.:
+
+```bash
+sudo sh -c 'echo "10.243.71.16 OR2HPM-EH9-9999-023" >> /etc/hosts'
+```
+
+### Wygenerowanie certyfikatu OPCUAtor
+
 OPCUAtor moze wygenerowac wlasny certyfikat klienta bez UaExpert:
 
 ```bash
