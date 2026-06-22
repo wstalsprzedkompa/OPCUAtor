@@ -68,7 +68,7 @@ def _print_startup_banner() -> None:
     print()
     print(f"{_color('Listening on:', Color.YELLOW)} {host}:{port}")
     print(f"{_color('Persistent OPC UA connection:', Color.YELLOW)} {settings.opcua_persistent_connection}")
-    print(_color("Try one of these URLs:", Color.YELLOW))
+    print(_color("Try one of these commands:", Color.YELLOW))
 
     addresses = _local_ip_addresses()
     if not addresses:
@@ -77,13 +77,13 @@ def _print_startup_banner() -> None:
 
     for address in addresses:
         base_url = f"http://{address}:{port}"
-        print(_color(f"  {base_url}/health", Color.DIM))
-        print(f"  {base_url}/connection")
-        print(f"  {base_url}/config")
-        print(f"  {base_url}/endpoints")
-        print(f"  {base_url}/Browse")
-        print(f"  {base_url}/Browse/Tree")
-        print(f"  {base_url}/Browse/Text")
+        print(_color(f'  curl "{base_url}/health" | jq .', Color.DIM))
+        print(f'  curl "{base_url}/connection" | jq .')
+        print(f'  curl "{base_url}/config" | jq .')
+        print(f'  curl "{base_url}/endpoints" | jq .')
+        print(f'  curl "{base_url}/Browse" | jq .')
+        print(f'  curl "{base_url}/Browse/Tree" | jq .')
+        print(f'  curl "{base_url}/Browse/Text"')
 
     print()
 
