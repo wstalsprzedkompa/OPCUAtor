@@ -26,6 +26,7 @@ async def config() -> dict[str, str | int | float | bool | None]:
         "rest_port": settings.rest_port,
         "opcua_endpoint": settings.opcua_endpoint,
         "opcua_username": settings.opcua_username,
+        "opcua_application_uri": settings.opcua_application_uri,
         "opcua_security_enabled": bool(settings.opcua_security_string),
         "opcua_max_depth": settings.opcua_max_depth,
         "opcua_max_nodes": settings.opcua_max_nodes,

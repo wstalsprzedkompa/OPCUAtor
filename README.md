@@ -30,6 +30,45 @@ OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/client_cert.pem,certs/
 
 Pliki certyfikatow moga byc skopiowane z profilu UaExpert albo wygenerowane osobno. Serwer OPC UA musi zaufac certyfikatowi klienta, tak samo jak przy UaExpert.
 
+## Certyfikat klienta OPC UA
+
+OPCUAtor moze wygenerowac wlasny certyfikat klienta bez UaExpert:
+
+```bash
+source .opcuator-venv/bin/activate
+python scripts/generate-opcua-client-cert.py
+```
+
+Powstana pliki:
+
+- `certs/opcuator-client-key.pem` - prywatny klucz klienta, zostaje lokalnie,
+- `certs/opcuator-client.pem` - certyfikat klienta w formacie PEM dla OPCUAtor,
+- `certs/opcuator-client.der` - publiczny certyfikat klienta w formacie DER do zaufania po stronie serwera.
+
+Do `.env` wpisz:
+
+```ini
+OPCUA_APPLICATION_URI=urn:twoj-host:OPCUAtor
+OPCUA_SECURITY_STRING=Basic256Sha256,SignAndEncrypt,certs/opcuator-client.pem,certs/opcuator-client-key.pem
+```
+
+Wartosc `OPCUA_APPLICATION_URI` powinna byc taka sama jak `Application URI` wypisane przez generator.
+
+Publiczny certyfikat DER skopiuj do katalogu zaufanych certyfikatow klientow na serwerze OPC UA:
+
+```bash
+scp certs/opcuator-client.der USER@HOST:/home/bmterra/lithos/security/opcua/trusted/
+```
+
+Jesli katalog wymaga uprawnien administracyjnych, skopiuj najpierw do `/tmp`, a potem przenies na serwerze:
+
+```bash
+scp certs/opcuator-client.der USER@HOST:/tmp/
+ssh USER@HOST 'sudo cp /tmp/opcuator-client.der /home/bmterra/lithos/security/opcua/trusted/'
+```
+
+Klucz prywatny `certs/opcuator-client-key.pem` nie powinien byc kopiowany na serwer ani commitowany do repozytorium.
+
 ## Uruchomienie
 
 Linux / Fedora:

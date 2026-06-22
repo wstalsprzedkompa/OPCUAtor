@@ -59,6 +59,8 @@ def _variant_to_json(value: Any) -> Any:
 async def _connected_client(endpoint: str):
     client = Client(url=endpoint, timeout=settings.opcua_request_timeout)
 
+    if settings.opcua_application_uri:
+        client.application_uri = settings.opcua_application_uri
     if settings.opcua_username:
         client.set_user(settings.opcua_username)
     if settings.opcua_password:
@@ -156,14 +158,14 @@ async def _browse_node(
             counter["truncated"] = True
             break
         child_payload = await _browse_node(
-                child,
-                depth=depth + 1,
-                max_depth=max_depth,
-                max_nodes=max_nodes,
-                counter=counter,
-                include_values=include_values,
-                include_methods=include_methods,
-            )
+            child,
+            depth=depth + 1,
+            max_depth=max_depth,
+            max_nodes=max_nodes,
+            counter=counter,
+            include_values=include_values,
+            include_methods=include_methods,
+        )
         if include_methods or child_payload.get("node_class") != ua.NodeClass.Method.name:
             browsed_children.append(child_payload)
 

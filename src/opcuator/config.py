@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     opcua_endpoint: str | None = Field(default=None, validation_alias="OPCUA_ENDPOINT")
     opcua_username: str | None = Field(default=None, validation_alias="OPCUA_USERNAME")
     opcua_password: str | None = Field(default=None, validation_alias="OPCUA_PASSWORD")
+    opcua_application_uri: str | None = Field(
+        default=None,
+        validation_alias="OPCUA_APPLICATION_URI",
+    )
     opcua_security_string: str | None = Field(
         default=None,
         validation_alias="OPCUA_SECURITY_STRING",

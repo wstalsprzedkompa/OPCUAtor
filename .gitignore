@@ -4,6 +4,7 @@
 .opcuator-push*/
 .venv/
 .opcuator-venv/
+certs/
 __pycache__/
 *.py[cod]
 .pytest_cache/
