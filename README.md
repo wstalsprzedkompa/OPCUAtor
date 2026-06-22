@@ -218,10 +218,10 @@ curl "http://localhost:9500/Browse?max_depth=8&max_nodes=5000" | jq .
 Display a simplified UaExpert-like text tree from OPC UA `Root`:
 
 ```bash
-curl "http://localhost:9500/Browse/Tree"
+curl "http://localhost:9500/Browse/Tree?max_depth=4"
 ```
 
-`/Browse/Tree` and `/Browse/Hierarchy` use `max_depth=4` by default. Pass a different value when you need a deeper or shallower view.
+Pass a different `max_depth` value when you need a deeper or shallower view.
 
 Get the hierarchy as structured JSON with node metadata:
 
