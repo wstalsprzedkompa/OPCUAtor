@@ -47,7 +47,6 @@ chmod +x opcuator.sh
 ```
 
 On startup, OPCUAtor prints its name, REST port, and ready-to-use URLs.
-Set `NO_COLOR=1` before starting it if you want to disable colored terminal output.
 
 ## Basic `.env`
 

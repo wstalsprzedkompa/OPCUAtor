@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import socket
 import sys
 
@@ -46,7 +45,7 @@ def _local_ip_addresses() -> list[str]:
 
 
 def _colors_enabled() -> bool:
-    return sys.stdout.isatty() and os.getenv("NO_COLOR") is None and os.getenv("TERM") != "dumb"
+    return sys.stdout.isatty()
 
 
 def _color(text: str, color: str) -> str:
