@@ -63,11 +63,13 @@ def _print_startup_banner() -> None:
     print(_color("REST client for OPC UA", Color.GREEN))
     print()
     print(f"{_color('Listening on:', Color.YELLOW)} {host}:{port}")
+    print(f"{_color('Persistent OPC UA connection:', Color.YELLOW)} {settings.opcua_persistent_connection}")
     print(_color("Try one of these URLs:", Color.YELLOW))
 
     for address in _local_ip_addresses():
         base_url = f"http://{address}:{port}"
         print(_color(f"  {base_url}/health", Color.DIM))
+        print(f"  {base_url}/connection")
         print(f"  {base_url}/config")
         print(f"  {base_url}/endpoints")
         print(f"  {base_url}/namespace?max_depth=2&max_nodes=100")

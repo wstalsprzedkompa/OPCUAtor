@@ -66,7 +66,63 @@ def _variant_to_json(value: Any) -> Any:
 @asynccontextmanager
 async def _connected_client(endpoint: str):
     client = Client(url=endpoint, timeout=settings.opcua_request_timeout)
+    await configure_client(client)
 
+    try:
+        await client.connect()
+        yield client
+    finally:
+        await client.disconnect()
+
+
+async def browse_namespace(request: BrowseRequest) -> BrowseResponse:
+    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
+    async with _connected_client(endpoint) as client:
+        return await browse_namespace_with_client(client, request, endpoint)
+
+
+async def browse_namespace_with_client(
+    client: Client,
+    request: BrowseRequest,
+    endpoint: str | None = None,
+) -> BrowseResponse:
+    response_endpoint = endpoint or get_configured_endpoint()
+
+    max_depth = request.max_depth if request.max_depth is not None else settings.opcua_max_depth
+    max_nodes = request.max_nodes if request.max_nodes is not None else settings.opcua_max_nodes
+    counter = {"count": 0, "truncated": False}
+
+    namespace_array = await _read_namespace_array(client)
+    root = client.get_node(request.root_node)
+    tree = await _browse_node(
+        root,
+        depth=0,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+        counter=counter,
+        include_values=request.include_values,
+        include_methods=request.include_methods,
+    )
+
+    return BrowseResponse(
+        endpoint=response_endpoint,
+        root_node=request.root_node,
+        node_count=counter["count"],
+        truncated=counter["truncated"],
+        namespace_array=namespace_array,
+        tree=tree,
+    )
+
+
+async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, Any]]:
+    normalized_endpoint = _normalize_endpoint(endpoint or settings.opcua_endpoint)
+    client = Client(url=normalized_endpoint, timeout=settings.opcua_request_timeout)
+    await configure_client(client)
+    endpoints = await client.connect_and_get_server_endpoints()
+    return [_endpoint_to_json(item) for item in endpoints]
+
+
+async def configure_client(client: Client) -> None:
     client.name = settings.opcua_application_name
     client.description = settings.opcua_application_name
     client.product_uri = settings.opcua_product_uri
@@ -84,55 +140,9 @@ async def _connected_client(endpoint: str):
     if security_string:
         await client.set_security_string(security_string)
 
-    try:
-        await client.connect()
-        yield client
-    finally:
-        await client.disconnect()
 
-
-async def browse_namespace(request: BrowseRequest) -> BrowseResponse:
-    endpoint = _normalize_endpoint(request.endpoint or settings.opcua_endpoint)
-
-    max_depth = request.max_depth if request.max_depth is not None else settings.opcua_max_depth
-    max_nodes = request.max_nodes if request.max_nodes is not None else settings.opcua_max_nodes
-    counter = {"count": 0, "truncated": False}
-
-    async with _connected_client(endpoint) as client:
-        namespace_array = await _read_namespace_array(client)
-        root = client.get_node(request.root_node)
-        tree = await _browse_node(
-            root,
-            depth=0,
-            max_depth=max_depth,
-            max_nodes=max_nodes,
-            counter=counter,
-            include_values=request.include_values,
-            include_methods=request.include_methods,
-        )
-
-    return BrowseResponse(
-        endpoint=endpoint,
-        root_node=request.root_node,
-        node_count=counter["count"],
-        truncated=counter["truncated"],
-        namespace_array=namespace_array,
-        tree=tree,
-    )
-
-
-async def get_server_endpoints(endpoint: str | None = None) -> list[dict[str, Any]]:
-    normalized_endpoint = _normalize_endpoint(endpoint or settings.opcua_endpoint)
-    client = Client(url=normalized_endpoint, timeout=settings.opcua_request_timeout)
-    client.name = settings.opcua_application_name
-    client.description = settings.opcua_application_name
-    client.product_uri = settings.opcua_product_uri
-    if settings.opcua_application_uri:
-        client.application_uri = settings.opcua_application_uri
-    if settings.opcua_server_uri:
-        client.server_uri = settings.opcua_server_uri
-    endpoints = await client.connect_and_get_server_endpoints()
-    return [_endpoint_to_json(item) for item in endpoints]
+def get_configured_endpoint() -> str:
+    return _normalize_endpoint(settings.opcua_endpoint)
 
 
 def _normalize_endpoint(endpoint: str | None) -> str:

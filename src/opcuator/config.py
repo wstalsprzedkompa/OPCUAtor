@@ -33,6 +33,14 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="OPCUA_ASSUME_ANONYMOUS_IF_NO_TOKENS",
     )
+    opcua_persistent_connection: bool = Field(
+        default=True,
+        validation_alias="OPCUA_PERSISTENT_CONNECTION",
+    )
+    opcua_connect_on_startup: bool = Field(
+        default=False,
+        validation_alias="OPCUA_CONNECT_ON_STARTUP",
+    )
 
     opcua_max_depth: int = Field(default=8, validation_alias="OPCUA_MAX_DEPTH")
     opcua_max_nodes: int = Field(default=5000, validation_alias="OPCUA_MAX_NODES")

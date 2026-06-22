@@ -178,6 +178,9 @@ python scripts/generate-opcua-client-cert.py --write-pem-cert
 Available endpoints:
 
 - `GET http://localhost:9500/health`
+- `GET http://localhost:9500/connection`
+- `POST http://localhost:9500/connect`
+- `POST http://localhost:9500/disconnect`
 - `GET http://localhost:9500/config`
 - `GET http://localhost:9500/endpoints`
 - `GET http://localhost:9500/namespace`
@@ -187,6 +190,21 @@ Check server endpoint/security information:
 
 ```bash
 curl "http://localhost:9500/endpoints" | jq .
+```
+
+Check or control the persistent OPC UA connection:
+
+```bash
+curl "http://localhost:9500/connection" | jq .
+curl -X POST "http://localhost:9500/connect" | jq .
+curl -X POST "http://localhost:9500/disconnect" | jq .
+```
+
+By default, OPCUAtor keeps one OPC UA session and reuses it for `/namespace`:
+
+```ini
+OPCUA_PERSISTENT_CONNECTION=true
+OPCUA_CONNECT_ON_STARTUP=false
 ```
 
 Browse the standard `Objects` folder:
