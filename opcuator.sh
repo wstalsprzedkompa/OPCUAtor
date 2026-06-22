@@ -19,6 +19,4 @@ fi
 
 export PYTHONPATH="${PYTHONPATH:-src}"
 
-exec "$PYTHON_BIN" -m uvicorn opcuator.main:app \
-  --host "${REST_HOST:-0.0.0.0}" \
-  --port "${REST_PORT:-9500}"
+exec "$PYTHON_BIN" -m opcuator.serve

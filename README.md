@@ -130,6 +130,8 @@ chmod +x opcuator.sh
 ./opcuator.sh
 ```
 
+Po starcie OPCUAtor wypisze swoja nazwe, port REST oraz kilka gotowych adresow URL, od ktorych mozna zaczac testy.
+
 Serwis bedzie dostepny pod:
 
 - `GET http://localhost:9500/health`

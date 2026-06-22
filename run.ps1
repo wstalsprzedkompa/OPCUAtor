@@ -28,11 +28,8 @@ if (Test-Path (Join-Path $PSScriptRoot ".opcuator-venv\Scripts\python.exe")) {
     $python = "python"
 }
 
-$hostValue = if ($env:REST_HOST) { $env:REST_HOST } else { "0.0.0.0" }
-$portValue = if ($env:REST_PORT) { $env:REST_PORT } else { "9500" }
-
 $env:PYTHONPATH = Join-Path $PSScriptRoot "src"
-& $python -m uvicorn opcuator.main:app --host $hostValue --port $portValue
+& $python -m opcuator.serve
 } finally {
     Pop-Location
 }
